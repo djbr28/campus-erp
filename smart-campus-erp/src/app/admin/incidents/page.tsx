@@ -1,5 +1,5 @@
 // ============================================================
-// Smart Campus ERP — Admin Incidents Management
+// Smart Campus ERP — Admin Incidents Management v2
 // ============================================================
 "use client";
 
@@ -7,77 +7,113 @@ import { useState } from "react";
 import { incidents } from "@/lib/mock-data-step2";
 import type { Incident } from "@/types";
 
-const severityStyles: Record<string, string> = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-amber-100 text-amber-700",
-  high: "bg-red-100 text-red-700",
-  critical: "bg-red-200 text-red-800",
-};
-
-const statusStyles: Record<string, string> = {
-  Open: "bg-blue-100 text-blue-700",
-  "In Progress": "bg-amber-100 text-amber-700",
-  Resolved: "bg-green-100 text-green-700",
-};
-
 export default function AdminIncidentsPage() {
   const [items, setItems] = useState<Incident[]>(incidents);
   const [viewIncident, setViewIncident] = useState<Incident | null>(null);
+  const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
 
   const updateStatus = (id: string, status: Incident["status"]) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
   };
 
+  const activeCount = items.filter((i) => i.status !== "Resolved").length;
+  const filtered = filter === "all" ? items : filter === "active" ? items.filter((i) => i.status !== "Resolved") : items.filter((i) => i.status === "Resolved");
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Incident Management</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Track and manage all campus incidents · {items.filter((i) => i.status !== "Resolved").length} active
+    <div className="space-y-6">
+      <div className="page-header">
+        <h1 className="page-title">Incident Management</h1>
+        <p className="page-subtitle">
+          Track and manage all campus incidents · {activeCount} active
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      {/* Stats */}
+      <div className="grid-3">
+        <div className="stat-card">
+          <div className="text-sm text-gray-500 mb-1">Active Incidents</div>
+          <div className="text-2xl font-bold text-gray-900">{activeCount}</div>
+        </div>
+        <div className="stat-card">
+          <div className="text-sm text-gray-500 mb-1">High / Critical</div>
+          <div className="text-2xl font-bold text-red-600">
+            {items.filter((i) => (i.severity === "high" || i.severity === "critical") && i.status !== "Resolved").length}
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="text-sm text-gray-500 mb-1">Resolved</div>
+          <div className="text-2xl font-bold text-green-600">
+            {items.filter((i) => i.status === "Resolved").length}
+          </div>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
+        {(["all", "active", "resolved"] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${
+              filter === f
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {/* Table (desktop) / Cards (mobile) */}
+      <div className="table-wrapper">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="table">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-gray-500">
-                <th className="px-5 py-3 font-medium">ID</th>
-                <th className="px-5 py-3 font-medium">Incident</th>
-                <th className="px-5 py-3 font-medium hidden md:table-cell">Category</th>
-                <th className="px-5 py-3 font-medium hidden lg:table-cell">Location</th>
-                <th className="px-5 py-3 font-medium">Severity</th>
-                <th className="px-5 py-3 font-medium hidden sm:table-cell">Time</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-                <th className="px-5 py-3 font-medium">Actions</th>
+              <tr>
+                <th className="hidden sm:table-cell">ID</th>
+                <th>Incident</th>
+                <th className="hidden md:table-cell">Category</th>
+                <th className="hidden lg:table-cell">Location</th>
+                <th>Severity</th>
+                <th className="hidden sm:table-cell">Time</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((inc) => (
-                <tr key={inc.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3 font-mono text-xs text-gray-500">{inc.id}</td>
-                  <td className="px-5 py-3">
+              {filtered.map((inc) => (
+                <tr key={inc.id} className={inc.severity === "critical" ? "bg-red-50/50" : ""}>
+                  <td className="hidden sm:table-cell font-mono text-xs text-gray-500">{inc.id}</td>
+                  <td>
                     <div className="font-medium text-gray-900 text-sm">{inc.title}</div>
                     <div className="text-xs text-gray-500 mt-0.5 truncate max-w-[200px]">{inc.description}</div>
                   </td>
-                  <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{inc.category}</td>
-                  <td className="px-5 py-3 text-gray-600 hidden lg:table-cell">{inc.location}</td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${severityStyles[inc.severity]}`}>
+                  <td className="hidden md:table-cell text-gray-600">{inc.category}</td>
+                  <td className="hidden lg:table-cell text-gray-600">{inc.location}</td>
+                  <td>
+                    <span className={`badge ${
+                      inc.severity === "low" ? "badge-green" :
+                      inc.severity === "medium" ? "badge-amber" :
+                      inc.severity === "high" ? "badge-red" : "badge-red-strong"
+                    }`}>
                       {inc.severity}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-gray-400 text-xs hidden sm:table-cell">{inc.time}</td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${statusStyles[inc.status]}`}>
+                  <td className="hidden sm:table-cell text-gray-400 text-xs">{inc.time}</td>
+                  <td>
+                    <span className={`badge ${
+                      inc.status === "Open" ? "badge-blue" :
+                      inc.status === "In Progress" ? "badge-amber" : "badge-green"
+                    }`}>
                       {inc.status}
                     </span>
                   </td>
-                  <td className="px-5 py-3">
-                    <div className="flex gap-1 flex-wrap">
+                  <td>
+                    <div className="flex gap-1.5 flex-wrap">
                       <button
                         onClick={() => setViewIncident(inc)}
-                        className="px-2 py-1 text-[11px] font-medium bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="btn-ghost"
                       >
                         View
                       </button>
@@ -85,13 +121,13 @@ export default function AdminIncidentsPage() {
                         <>
                           <button
                             onClick={() => updateStatus(inc.id, "In Progress")}
-                            className="px-2 py-1 text-[11px] font-medium bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                            className="btn-ghost text-blue-600 hover:bg-blue-50"
                           >
                             Assign
                           </button>
                           <button
                             onClick={() => updateStatus(inc.id, "Resolved")}
-                            className="px-2 py-1 text-[11px] font-medium bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors"
+                            className="btn-ghost text-green-600 hover:bg-green-50"
                           >
                             Resolve
                           </button>
@@ -101,6 +137,16 @@ export default function AdminIncidentsPage() {
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="empty-state py-12">
+                      <div className="text-3xl mb-3">✅</div>
+                      <p className="text-sm text-gray-500">No incidents match this filter.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -109,23 +155,69 @@ export default function AdminIncidentsPage() {
       {/* Detail modal */}
       {viewIncident && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4" onClick={() => setViewIncident(null)}>
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-200 flex items-start justify-between">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">{viewIncident.title}</h2>
-                <p className="text-sm text-gray-500">{viewIncident.id}</p>
+                <p className="text-sm text-gray-400 font-mono mt-0.5">{viewIncident.id}</p>
               </div>
-              <button onClick={() => setViewIncident(null)} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+              <button
+                onClick={() => setViewIncident(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                ✕
+              </button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div><span className="text-gray-500">Category:</span> {viewIncident.category}</div>
-              <div><span className="text-gray-500">Location:</span> {viewIncident.location}</div>
-              <div><span className="text-gray-500">Severity:</span> <span className={`font-medium ${severityStyles[viewIncident.severity]} px-2 py-0.5 rounded-full text-xs`}>{viewIncident.severity}</span></div>
-              <div><span className="text-gray-500">Status:</span> <span className={`font-medium ${statusStyles[viewIncident.status]} px-2 py-0.5 rounded-full text-xs`}>{viewIncident.status}</span></div>
+            <div className="px-6 py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs font-medium text-gray-400 mb-1">Category</div>
+                  <div className="text-sm font-medium text-gray-900">{viewIncident.category}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-gray-400 mb-1">Location</div>
+                  <div className="text-sm font-medium text-gray-900">{viewIncident.location}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-gray-400 mb-1">Severity</div>
+                  <span className={`badge ${
+                    viewIncident.severity === "low" ? "badge-green" :
+                    viewIncident.severity === "medium" ? "badge-amber" :
+                    viewIncident.severity === "high" ? "badge-red" : "badge-red-strong"
+                  }`}>
+                    {viewIncident.severity}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-gray-400 mb-1">Status</div>
+                  <span className={`badge ${
+                    viewIncident.status === "Open" ? "badge-blue" :
+                    viewIncident.status === "In Progress" ? "badge-amber" : "badge-green"
+                  }`}>
+                    {viewIncident.status}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-medium text-gray-400 mb-1">Description</div>
+                <p className="text-sm text-gray-700 leading-relaxed">{viewIncident.description}</p>
+              </div>
             </div>
-            <div>
-              <div className="text-sm text-gray-500 mb-1">Description</div>
-              <p className="text-sm text-gray-700">{viewIncident.description}</p>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+              <button onClick={() => setViewIncident(null)} className="btn-secondary">
+                Close
+              </button>
+              {viewIncident.status !== "Resolved" && (
+                <button
+                  onClick={() => {
+                    updateStatus(viewIncident.id, "Resolved");
+                    setViewIncident(null);
+                  }}
+                  className="btn-primary"
+                >
+                  Mark Resolved
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 // ============================================================
-// Smart Campus ERP — Schedule Page
+// Smart Campus ERP — Schedule Page v2
 // ============================================================
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -33,44 +33,40 @@ const scheduleData: Record<string, { time: string; course: string; room: string;
 
 export default function SchedulePage() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Schedule</h1>
-          <p className="mt-1 text-sm text-gray-500">Weekly timetable overview</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="px-3 py-2 text-sm font-medium bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            ← Previous
-          </button>
-          <button className="px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">
-            This Week
-          </button>
-          <button className="px-3 py-2 text-sm font-medium bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            Next →
-          </button>
+    <div className="space-y-6">
+      <div className="page-header">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="page-title">Schedule</h1>
+            <p className="page-subtitle">Weekly timetable overview</p>
+          </div>
+          <div className="flex gap-2">
+            <button className="btn-secondary btn-sm">← Previous</button>
+            <button className="btn-primary btn-sm">This Week</button>
+            <button className="btn-secondary btn-sm">Next →</button>
+          </div>
         </div>
       </div>
 
       {/* Desktop grid */}
-      <div className="hidden md:block bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="grid grid-cols-[80px_repeat(5,1fr)] border-b border-gray-100">
-          <div className="p-3 text-xs font-medium text-gray-400 border-r border-gray-100" />
+      <div className="hidden md:block card-flat overflow-hidden">
+        <div className="grid grid-cols-[80px_repeat(5,1fr)] border-b border-gray-200 bg-gray-50">
+          <div className="p-3 text-xs font-medium text-gray-400 border-r border-gray-200" />
           {days.map((d) => (
-            <div key={d} className="p-3 text-xs font-semibold text-gray-500 text-center border-r border-gray-100 last:border-r-0">
+            <div key={d} className="p-3 text-xs font-semibold text-gray-500 text-center border-r border-gray-200 last:border-r-0">
               {d}
             </div>
           ))}
         </div>
         {hours.map((hour) => (
-          <div key={hour} className="grid grid-cols-[80px_repeat(5,1fr)] border-b border-gray-50 last:border-b-0 min-h-[56px]">
-            <div className="p-2 text-xs font-mono text-gray-400 border-r border-gray-100 flex items-start">
+          <div key={hour} className="grid grid-cols-[80px_repeat(5,1fr)] border-b border-gray-100 last:border-b-0 min-h-[56px]">
+            <div className="p-2 text-xs font-mono text-gray-400 border-r border-gray-200 flex items-start">
               {hour}
             </div>
             {days.map((d) => {
               const cls = scheduleData[d]?.find((c) => c.time === hour);
               return (
-                <div key={`${d}-${hour}`} className="p-1 border-r border-gray-50 last:border-r-0">
+                <div key={`${d}-${hour}`} className="p-1 border-r border-gray-100 last:border-r-0">
                   {cls && (
                     <div className={`h-full p-2 rounded-lg border text-xs font-medium ${cls.color}`}>
                       <div>{cls.course}</div>
@@ -87,12 +83,12 @@ export default function SchedulePage() {
       {/* Mobile: simple list */}
       <div className="md:hidden space-y-4">
         {days.map((d) => (
-          <div key={d} className="bg-white rounded-2xl border border-gray-100 p-4">
+          <div key={d} className="card-flat p-4">
             <h3 className="font-semibold text-gray-900 mb-3">{d}</h3>
             <div className="space-y-2">
               {scheduleData[d]?.length ? (
                 scheduleData[d].map((cls, i) => (
-                  <div key={i} className={`p-3 rounded-xl border ${cls.color}`}>
+                  <div key={i} className={`p-3 rounded-lg border ${cls.color}`}>
                     <div className="flex justify-between items-center">
                       <span className="font-medium">{cls.course}</span>
                       <span className="text-xs opacity-70">{cls.time}</span>
@@ -101,7 +97,7 @@ export default function SchedulePage() {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-400">No classes</p>
+                <p className="text-sm text-gray-400 py-2">No classes</p>
               )}
             </div>
           </div>

@@ -1,5 +1,5 @@
 // ============================================================
-// Smart Campus ERP — Attendance Page
+// Smart Campus ERP — Attendance Page v2
 // ============================================================
 
 const todayClasses = [
@@ -12,47 +12,63 @@ const todayClasses = [
 
 export default function AttendancePage() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
-        <p className="mt-1 text-sm text-gray-500">Today&apos;s attendance overview — {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+    <div className="space-y-6">
+      <div className="page-header">
+        <h1 className="page-title">Attendance</h1>
+        <p className="page-subtitle">
+          Today&apos;s attendance overview — {new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+        </p>
       </div>
 
       {/* Summary cards */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          { label: "Total Classes Today", value: "5", icon: "📚" },
-          { label: "Overall Attendance", value: "91.7%", icon: "✅" },
-          { label: "Classes Pending", value: "1", icon: "⏳" },
-        ].map((s) => (
-          <div key={s.label} className="p-4 bg-white rounded-2xl border border-gray-100 flex items-center gap-4">
-            <span className="text-2xl">{s.icon}</span>
-            <div>
-              <div className="text-xl font-bold text-gray-900">{s.value}</div>
-              <div className="text-sm text-gray-500">{s.label}</div>
-            </div>
-          </div>
-        ))}
+      <div className="grid-3">
+        <div className="stat-card">
+          <div className="text-sm text-gray-500 mb-1">Total Classes Today</div>
+          <div className="text-2xl font-bold text-gray-900">5</div>
+        </div>
+        <div className="stat-card">
+          <div className="text-sm text-gray-500 mb-1">Overall Attendance</div>
+          <div className="text-2xl font-bold text-gray-900">91.7%</div>
+          <div className="badge badge-green mt-2">Good</div>
+        </div>
+        <div className="stat-card">
+          <div className="text-sm text-gray-500 mb-1">Classes Pending</div>
+          <div className="text-2xl font-bold text-amber-600">1</div>
+        </div>
       </div>
 
       {/* Class list */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-4">Classes</h2>
-        <div className="space-y-3">
+      <div className="card-flat">
+        <div className="px-5 py-4 border-b border-gray-200">
+          <h2 className="section-heading mb-0">Classes</h2>
+        </div>
+        <div className="divide-y divide-gray-100">
           {todayClasses.map((c, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
+            <div key={i} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
               <div className="text-sm font-mono text-gray-400 w-20 shrink-0">{c.time}</div>
               <div className="flex-1 min-w-0">
                 <div className="font-medium text-gray-900 text-sm">{c.course}</div>
                 <div className="text-xs text-gray-500">Section {c.section}</div>
               </div>
+              <div className="hidden sm:block flex-1 max-w-[120px]">
+                <div className="progress-track">
+                  <div
+                    className={`progress-fill ${
+                      c.pct >= 90 ? "progress-fill-green" : c.pct > 0 ? "progress-fill-amber" : "progress-fill-red"
+                    }`}
+                    style={{ width: `${c.pct}%` }}
+                  />
+                </div>
+              </div>
               <div className="text-right shrink-0">
-                <div className={`text-sm font-semibold ${c.pct >= 90 ? "text-green-600" : c.pct > 0 ? "text-amber-600" : "text-gray-400"}`}>
+                <div className={`text-sm font-semibold ${
+                  c.pct >= 90 ? "text-green-600" : c.pct > 0 ? "text-amber-600" : "text-gray-400"
+                }`}>
                   {c.pct > 0 ? `${c.pct}%` : "—"}
                 </div>
                 <div className="text-xs text-gray-400">{c.present}/{c.total}</div>
               </div>
-              <button className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors shrink-0">
+              <button className="btn-primary btn-sm shrink-0">
                 {c.pct === 0 ? "Take" : "View"}
               </button>
             </div>
