@@ -1,3 +1,5 @@
+"use client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 // ============================================================
 // Smart Campus ERP — Student Dashboard v2
 // ============================================================
