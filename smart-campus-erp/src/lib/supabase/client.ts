@@ -1,27 +1,28 @@
 // ============================================================
-// Smart Campus ERP — Browser Supabase Client
+// Smart Campus ERP — Browser Supabase Client (Cookie-Based)
 //
-// Simple, reliable client-side Supabase client.
-// Uses only the publishable (anon) key — never a service-role key.
+// Uses @supabase/ssr's createBrowserClient so that auth
+// tokens are stored in cookies — the same format the
+// middleware reads via createServerClient.
+//
+// Previously used @supabase/supabase-js's createClient()
+// which stores tokens in localStorage by default. The
+// middleware couldn't see those tokens, so sessions appeared
+// unauthenticated on every server-side navigation.
 // ============================================================
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-
-let _client: SupabaseClient | null = null;
+import { createBrowserClient } from "@supabase/ssr";
 
 /**
- * Returns the Supabase browser client (singleton).
+ * Returns a Supabase browser client backed by cookies.
  *
  * - Safe to import in any Client Component ("use client").
- * - Uses only the publishable (anon) key — never a service-role key.
+ * - Auth tokens are written to cookies (not localStorage).
+ * - Cookies match the format @supabase/ssr reads in middleware.
  * - Throws a clear error if environment variables are missing at runtime.
- * - Reads process.env at call time (not at import time) so that
- *   NEXT_PUBLIC_* values are available even when .env.local had
- *   placeholders at build time.
+ * - Reads process.env at call time (not at import time).
  */
-export function getSupabaseClient(): SupabaseClient {
-  if (_client) return _client;
-
+export function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -33,6 +34,5 @@ export function getSupabaseClient(): SupabaseClient {
     );
   }
 
-  _client = createClient(supabaseUrl, supabaseKey);
-  return _client;
+  return createBrowserClient(supabaseUrl, supabaseKey);
 }
