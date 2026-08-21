@@ -13,7 +13,12 @@ export default function DashboardLayout({
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+        <TopBar
+          userName="Dr. Sarah Mitchell"
+          userRole="Administrator"
+          userInitials="SM"
+          homeHref="/dashboard"
+        />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>

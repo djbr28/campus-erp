@@ -39,7 +39,12 @@ export default function RoleDashboardLayout({
         userInitials={userInitials}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar />
+        <TopBar
+          userName={userName}
+          userRole={userRole}
+          userInitials={userInitials}
+          homeHref={homeHref}
+        />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

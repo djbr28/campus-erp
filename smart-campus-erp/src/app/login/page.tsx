@@ -48,34 +48,50 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[LOGIN] Form submitted");
     setError(null);
     setIsLoading(true);
 
     try {
       const supabase = getSupabaseClient();
+      console.log("[LOGIN] Supabase client created");
 
       // ── Step 1: Sign in with Supabase Auth ──
+      console.log("[LOGIN] BEFORE SUPABASE LOGIN", { email });
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({ email, password });
+      console.log("[LOGIN] AUTH RESULT", {
+        userId: authData?.user?.id,
+        userEmail: authData?.user?.email,
+        authError: authError?.message ?? null,
+      });
 
       if (authError) {
+        console.error("[LOGIN] Auth failed:", authError.message);
         setError(authError.message);
         return;
       }
 
       if (!authData.user) {
+        console.error("[LOGIN] Auth succeeded but no user returned");
         setError("Authentication succeeded but no user was returned. Please try again.");
         return;
       }
 
       // ── Step 2: Fetch the user's profile to get their role ──
+      console.log("[LOGIN] Fetching profile for user:", authData.user.id);
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", authData.user.id)
         .single();
+      console.log("[LOGIN] PROFILE RESULT", {
+        role: profile?.role ?? null,
+        profileError: profileError?.message ?? null,
+      });
 
       if (profileError || !profile) {
+        console.error("[LOGIN] No profile found:", profileError?.message);
         setError(
           "Your account does not have a profile. Please contact an administrator to set up your access."
         );
@@ -84,17 +100,21 @@ export default function LoginPage() {
 
       // ── Step 3: Redirect based on the role from the database ──
       const route = routeForRole(profile.role);
+      console.log("[LOGIN] Role:", profile.role, "→ Route:", route);
 
       if (!route) {
+        console.error("[LOGIN] Unrecognized role:", profile.role);
         setError(
           `Your account has an unrecognized role ("${profile.role}"). Please contact an administrator.`
         );
         return;
       }
 
-      router.push(route);
+      console.log("[LOGIN] REDIRECTING TO", route);
+      router.replace(route);
     } catch (err) {
       // Catch unexpected errors (network, etc.)
+      console.error("[LOGIN] Unexpected error:", err);
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
       setError(message);
