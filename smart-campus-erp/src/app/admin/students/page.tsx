@@ -62,11 +62,11 @@ export default function AdminStudentsPage() {
   });
 
   const avgGpa = students.length > 0
-    ? (students.reduce((acc, s) => acc + parseFloat(s.gpa || "0"), 0) / students.length).toFixed(2)
+    ? (students.reduce((acc, s) => acc + parseFloat(String(s.gpa || "0")), 0) / students.length).toFixed(2)
     : "0.00";
 
   const avgAttendance = students.length > 0
-    ? Math.round(students.reduce((acc, s) => acc + (s.attendancePct || 0), 0) / students.length)
+    ? Math.round(students.reduce((acc, s) => acc + Number(s.attendancePct || s.attendance_pct || 0), 0) / students.length)
     : 0;
 
   return (
@@ -165,31 +165,36 @@ export default function AdminStudentsPage() {
                     </span>
                   </td>
                   <td className="hidden lg:table-cell">
-                    <div className="flex items-center gap-3 min-w-[130px]">
-                      <div className="flex-1 progress-track">
-                        <div
-                          className={`progress-fill ${
-                            s.attendancePct >= 85
-                              ? "progress-fill-green"
-                              : s.attendancePct >= 75
-                              ? "progress-fill-amber"
-                              : "progress-fill-red"
-                          }`}
-                          style={{ width: `${Math.min(s.attendancePct, 100)}%` }}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-bold tabular-nums ${
-                          s.attendancePct >= 85
-                            ? "text-emerald-400"
-                            : s.attendancePct >= 75
-                            ? "text-amber-400"
-                            : "text-rose-400"
-                        }`}
-                      >
-                        {s.attendancePct}%
-                      </span>
-                    </div>
+                    {(() => {
+                      const att = Number(s.attendancePct || s.attendance_pct || 0);
+                      return (
+                        <div className="flex items-center gap-3 min-w-[130px]">
+                          <div className="flex-1 progress-track">
+                            <div
+                              className={`progress-fill ${
+                                att >= 85
+                                  ? "progress-fill-green"
+                                  : att >= 75
+                                  ? "progress-fill-amber"
+                                  : "progress-fill-red"
+                              }`}
+                              style={{ width: `${Math.min(att, 100)}%` }}
+                            />
+                          </div>
+                          <span
+                            className={`text-xs font-bold tabular-nums ${
+                              att >= 85
+                                ? "text-emerald-400"
+                                : att >= 75
+                                ? "text-amber-400"
+                                : "text-rose-400"
+                            }`}
+                          >
+                            {att}%
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td>
                     <Badge

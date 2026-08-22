@@ -75,7 +75,7 @@ export default function LoginPage() {
 
       // ── Step 2: Fetch the user's profile to get their role ──
       console.log("[LOGIN] Fetching profile for user:", authData.user.id);
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", authData.user.id)
@@ -85,12 +85,30 @@ export default function LoginPage() {
         profileError: profileError?.message ?? null,
       });
 
-      if (profileError || !profile) {
-        console.error("[LOGIN] No profile found:", profileError?.message);
-        setError(
-          "Your account does not have a profile. Please contact an administrator to set up your access."
-        );
-        return;
+      // If user exists in Auth (e.g. created directly in Supabase dashboard) but has no profile row yet:
+      if (!profile) {
+        const metadataRole = authData.user.user_metadata?.role || (email.toLowerCase().includes("admin") ? "ADMIN" : email.toLowerCase().includes("security") ? "SECURITY" : email.toLowerCase().includes("faculty") ? "FACULTY" : "STUDENT");
+        const metadataName = authData.user.user_metadata?.name || email.split("@")[0];
+
+        console.log("[LOGIN] Auto-creating missing profile row with role:", metadataRole);
+        const { error: insertErr } = await supabase.from("profiles").upsert([
+          {
+            id: authData.user.id,
+            email: authData.user.email || email,
+            name: metadataName,
+            role: metadataRole.toUpperCase(),
+          },
+        ]);
+
+        if (!insertErr) {
+          profile = { role: metadataRole.toUpperCase() };
+        } else {
+          console.error("[LOGIN] Could not auto-create profile:", insertErr.message);
+          setError(
+            "Your account does not have a profile. Please sign up via the signup page or insert a profile record in Supabase."
+          );
+          return;
+        }
       }
 
       // ── Step 3: Redirect based on the role from the database ──

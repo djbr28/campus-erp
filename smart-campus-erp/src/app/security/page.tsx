@@ -17,14 +17,14 @@ import {
   ChevronRightIcon,
 } from "@/components/ui/Icons";
 
-const severityVariants: Record<Incident["severity"], BadgeVariant> = {
+const severityVariants: Record<string, BadgeVariant> = {
   low: "green",
   medium: "amber",
   high: "red",
   critical: "red-strong",
 };
 
-const statusVariants: Record<Incident["status"], BadgeVariant> = {
+const statusVariants: Record<string, BadgeVariant> = {
   Open: "blue",
   "In Progress": "amber",
   Resolved: "green",
@@ -184,10 +184,10 @@ export default function SecurityDashboardPage() {
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="font-mono text-xs font-bold text-white/40">{inc.id}</span>
                     <span className="text-sm font-bold text-[#f4f6d6]">{inc.title}</span>
-                    <Badge variant={severityVariants[inc.severity]}>
-                      {inc.severity.toUpperCase()}
+                    <Badge variant={severityVariants[inc.severity || "medium"] || "amber"}>
+                      {(inc.severity || "medium").toUpperCase()}
                     </Badge>
-                    <Badge variant={statusVariants[inc.status]} dot>
+                    <Badge variant={statusVariants[inc.status] || "blue"} dot>
                       {inc.status}
                     </Badge>
                   </div>

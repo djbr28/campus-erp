@@ -40,6 +40,22 @@
   --shadow-xl: 0 24px 36px -6px rgba(0, 0, 0, 0.8);
 }
 
+.light, [data-theme='light'] {
+  --canva-cream: #121212;
+  --canva-cream-muted: #2d2d2d;
+  --canva-dark: #f8f8f2;
+  --canva-surface: #ffffff;
+  --canva-surface-elevated: #f0f0e8;
+  --canva-ochre: #bf783e;
+  --canva-ochre-dark: #a96831;
+  --canva-ochre-light: #d88e4f;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px -1px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 24px 36px -6px rgba(0, 0, 0, 0.2);
+}
+
 /* --- Base Styles ------------------------------------------------ */
 html {
   -webkit-font-smoothing: antialiased;

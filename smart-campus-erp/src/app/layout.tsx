@@ -20,6 +20,8 @@ export const metadata: Metadata = {
     "An intelligent, all-in-one ERP platform for colleges and schools. Manage students, faculty, attendance, security, and campus operations with AI-driven insights.",
 };
 
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: {
@@ -28,11 +30,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`scroll-smooth ${inter.variable} ${playfair.variable}`}
       data-scroll-behavior="smooth"
     >
-      <body className={`${inter.className} antialiased bg-[#0e0e0e] text-[#f4f6d6] selection:bg-[#bf783e] selection:text-white`}>
-        {children}
+      <body className={`${inter.className} antialiased bg-[#0e0e0e] text-[#f4f6d6] selection:bg-[#bf783e] selection:text-white transition-colors duration-200`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

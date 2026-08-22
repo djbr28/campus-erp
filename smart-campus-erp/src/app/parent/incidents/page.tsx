@@ -12,14 +12,14 @@ import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
 import { IncidentsIcon, CheckIcon } from "@/components/ui/Icons";
 
-const severityVariants: Record<Incident["severity"], BadgeVariant> = {
+const severityVariants: Record<string, BadgeVariant> = {
   low: "green",
   medium: "amber",
   high: "red",
   critical: "red-strong",
 };
 
-const statusVariants: Record<Incident["status"], BadgeVariant> = {
+const statusVariants: Record<string, BadgeVariant> = {
   Open: "blue",
   "In Progress": "amber",
   Resolved: "green",
@@ -146,10 +146,10 @@ export default function ParentIncidentsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="text-sm font-bold text-[#f4f6d6]">{inc.title}</span>
-                    <Badge variant={severityVariants[inc.severity]}>
-                      {inc.severity.toUpperCase()}
+                    <Badge variant={severityVariants[inc.severity || "medium"] || "amber"}>
+                      {(inc.severity || "medium").toUpperCase()}
                     </Badge>
-                    <Badge variant={statusVariants[inc.status]} dot>
+                    <Badge variant={statusVariants[inc.status] || "blue"} dot>
                       {inc.status}
                     </Badge>
                   </div>
@@ -196,15 +196,15 @@ export default function ParentIncidentsPage() {
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-white/40">Severity</div>
                 <div className="mt-1">
-                  <Badge variant={severityVariants[viewIncident.severity]}>
-                    {viewIncident.severity.toUpperCase()}
+                  <Badge variant={severityVariants[viewIncident.severity || "medium"] || "amber"}>
+                    {(viewIncident.severity || "medium").toUpperCase()}
                   </Badge>
                 </div>
               </div>
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-white/40">Status</div>
                 <div className="mt-1">
-                  <Badge variant={statusVariants[viewIncident.status]} dot>
+                  <Badge variant={statusVariants[viewIncident.status] || "blue"} dot>
                     {viewIncident.status}
                   </Badge>
                 </div>

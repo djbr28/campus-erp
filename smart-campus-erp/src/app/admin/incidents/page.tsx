@@ -12,14 +12,14 @@ import Modal from "@/components/ui/Modal";
 import EmptyState from "@/components/ui/EmptyState";
 import { IncidentsIcon, CheckIcon } from "@/components/ui/Icons";
 
-const severityVariants: Record<Incident["severity"], BadgeVariant> = {
+const severityVariants: Record<string, BadgeVariant> = {
   low: "green",
   medium: "amber",
   high: "red",
   critical: "red-strong",
 };
 
-const statusVariants: Record<Incident["status"], BadgeVariant> = {
+const statusVariants: Record<string, BadgeVariant> = {
   Open: "blue",
   "In Progress": "amber",
   Resolved: "green",
@@ -184,15 +184,15 @@ export default function AdminIncidentsPage() {
                     {inc.location}
                   </td>
                   <td>
-                    <Badge variant={severityVariants[inc.severity]}>
-                      {inc.severity.toUpperCase()}
+                    <Badge variant={severityVariants[inc.severity || "medium"] || "amber"}>
+                      {(inc.severity || "medium").toUpperCase()}
                     </Badge>
                   </td>
                   <td className="hidden sm:table-cell text-white/40 text-xs font-medium">
                     {inc.time}
                   </td>
                   <td>
-                    <Badge variant={statusVariants[inc.status]} dot>
+                    <Badge variant={statusVariants[inc.status] || "blue"} dot>
                       {inc.status}
                     </Badge>
                   </td>
@@ -202,26 +202,16 @@ export default function AdminIncidentsPage() {
                         onClick={() => setViewIncident(inc)}
                         className="btn-ghost"
                       >
-                        View
+                        Details
                       </button>
 
                       {inc.status !== "Resolved" && (
-                        <>
-                          {inc.status === "Open" && (
-                            <button
-                              onClick={() => updateStatus(inc.id, "In Progress")}
-                              className="px-3 py-1 text-xs font-bold text-[#0e0e0e] bg-[#f4f6d6] hover:bg-white rounded-full transition-colors"
-                            >
-                              Assign
-                            </button>
-                          )}
-                          <button
-                            onClick={() => updateStatus(inc.id, "Resolved")}
-                            className="px-3 py-1 text-xs font-bold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/50 rounded-full transition-colors"
-                          >
-                            Resolve
-                          </button>
-                        </>
+                        <button
+                          onClick={() => updateStatus(inc.id, "Resolved")}
+                          className="px-3 py-1 text-xs font-bold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/50 rounded-full transition-colors hidden sm:inline-flex"
+                        >
+                          Resolve
+                        </button>
                       )}
                     </div>
                   </td>
@@ -283,15 +273,15 @@ export default function AdminIncidentsPage() {
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-white/40">Severity Level</div>
                 <div className="mt-1">
-                  <Badge variant={severityVariants[viewIncident.severity]}>
-                    {viewIncident.severity.toUpperCase()}
+                  <Badge variant={severityVariants[viewIncident.severity || "medium"] || "amber"}>
+                    {(viewIncident.severity || "medium").toUpperCase()}
                   </Badge>
                 </div>
               </div>
               <div>
                 <div className="text-[11px] font-bold uppercase tracking-wider text-white/40">Current Status</div>
                 <div className="mt-1">
-                  <Badge variant={statusVariants[viewIncident.status]} dot>
+                  <Badge variant={statusVariants[viewIncident.status] || "blue"} dot>
                     {viewIncident.status}
                   </Badge>
                 </div>

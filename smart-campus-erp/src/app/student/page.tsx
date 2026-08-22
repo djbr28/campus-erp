@@ -214,32 +214,36 @@ export default function StudentDashboardPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {attendance.slice(0, 4).map((a) => (
-                  <div
-                    key={a.code}
-                    className="flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-[#bf783e]/50 hover:bg-white/[0.02] transition-colors bg-[#181818]"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-white/5 text-[#f4f6d6] border border-white/10 flex items-center justify-center text-xs font-bold shrink-0 font-mono">
-                      {a.code.split("-")[1] || a.code}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-bold text-[#f4f6d6] truncate">{a.subject}</div>
-                      <div className="text-xs text-white/40 font-mono mt-0.5">{a.code}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`font-serif text-base font-normal ${
-                          a.pct >= 85 ? "text-emerald-400" : a.pct >= 75 ? "text-amber-400" : "text-rose-400"
-                        }`}
-                      >
-                        {a.pct}%
-                      </span>
-                      <div className="text-[11px] text-white/40 font-medium mt-0.5">
-                        {a.present}/{a.total} Attended
+                {attendance.slice(0, 4).map((a, idx) => {
+                  const code = a.code || `SUB-${idx + 1}`;
+                  const pct = a.pct ?? Math.round((a.present / (a.total || 1)) * 100);
+                  return (
+                    <div
+                      key={code}
+                      className="flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-[#bf783e]/50 hover:bg-white/[0.02] transition-colors bg-[#181818]"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white/5 text-[#f4f6d6] border border-white/10 flex items-center justify-center text-xs font-bold shrink-0 font-mono">
+                        {code.split("-")[1] || code}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-bold text-[#f4f6d6] truncate">{a.subject}</div>
+                        <div className="text-xs text-white/40 font-mono mt-0.5">{code}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span
+                          className={`font-serif text-base font-normal ${
+                            pct >= 85 ? "text-emerald-400" : pct >= 75 ? "text-amber-400" : "text-rose-400"
+                          }`}
+                        >
+                          {pct}%
+                        </span>
+                        <div className="text-[11px] text-white/40 font-medium mt-0.5">
+                          {a.present}/{a.total} Attended
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

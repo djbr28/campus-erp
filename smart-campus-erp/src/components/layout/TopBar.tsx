@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { SearchIcon, BellIcon, PlusIcon } from "@/components/ui/Icons";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 interface TopBarProps {
   title?: string;
@@ -104,7 +105,10 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2.5 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Theme Mode Switcher */}
+        <ThemeToggle />
+
         {/* Notifications Popover */}
         <div className="relative" ref={notifRef}>
           <button

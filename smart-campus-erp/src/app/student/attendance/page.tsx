@@ -169,39 +169,49 @@ export default function StudentAttendancePage() {
                     {a.absent}
                   </td>
                   <td>
-                    <div className="flex items-center gap-3 min-w-[130px]">
-                      <div className="flex-1 progress-track">
-                        <div
-                          className={`progress-fill ${
-                            a.pct >= 85
-                              ? "progress-fill-green"
-                              : a.pct >= 75
-                              ? "progress-fill-amber"
-                              : "progress-fill-red"
-                          }`}
-                          style={{ width: `${a.pct}%` }}
-                        />
-                      </div>
-                      <span
-                        className={`text-xs font-bold tabular-nums ${
-                          a.pct >= 85
-                            ? "text-emerald-400"
-                            : a.pct >= 75
-                            ? "text-amber-400"
-                            : "text-rose-400"
-                        }`}
-                      >
-                        {a.pct}%
-                      </span>
-                    </div>
+                    {(() => {
+                      const pct = a.pct ?? (a.total > 0 ? Math.round((a.present / a.total) * 100) : 0);
+                      return (
+                        <div className="flex items-center gap-3 min-w-[130px]">
+                          <div className="flex-1 progress-track">
+                            <div
+                              className={`progress-fill ${
+                                pct >= 85
+                                  ? "progress-fill-green"
+                                  : pct >= 75
+                                  ? "progress-fill-amber"
+                                  : "progress-fill-red"
+                              }`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span
+                            className={`text-xs font-bold tabular-nums ${
+                              pct >= 85
+                                ? "text-emerald-400"
+                                : pct >= 75
+                                ? "text-amber-400"
+                                : "text-rose-400"
+                            }`}
+                          >
+                            {pct}%
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td>
-                    <Badge
-                      variant={a.pct >= 85 ? "green" : a.pct >= 75 ? "amber" : "red"}
-                      dot
-                    >
-                      {a.pct >= 85 ? "Good" : a.pct >= 75 ? "Warning" : "Low"}
-                    </Badge>
+                    {(() => {
+                      const pct = a.pct ?? (a.total > 0 ? Math.round((a.present / a.total) * 100) : 0);
+                      return (
+                        <Badge
+                          variant={pct >= 85 ? "green" : pct >= 75 ? "amber" : "red"}
+                          dot
+                        >
+                          {pct >= 85 ? "Good" : pct >= 75 ? "Warning" : "Low"}
+                        </Badge>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))}
