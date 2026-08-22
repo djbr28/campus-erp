@@ -1,7 +1,18 @@
 // ============================================================
-// Smart Campus ERP — Dashboard Home v2
+// Smart Campus ERP — Faculty Dashboard Home (Editorial Aesthetic)
 // ============================================================
+import Link from "next/link";
 import { dashboardStats, recentActivities, alerts } from "@/lib/mock-data";
+import StatCard from "@/components/ui/StatCard";
+import Badge from "@/components/ui/Badge";
+import {
+  DynamicNavIcon,
+  StudentsIcon,
+  AttendanceIcon,
+  DashboardIcon,
+  IncidentsIcon,
+  ChevronRightIcon,
+} from "@/components/ui/Icons";
 
 const alertSeverityStyles: Record<string, string> = {
   danger: "alert-banner-danger",
@@ -12,51 +23,56 @@ const alertSeverityStyles: Record<string, string> = {
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in text-[#f4f6d6]">
       {/* Page header */}
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">
-          Welcome back, Dr. Mitchell. Here&apos;s what&apos;s happening on campus today.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Faculty Portal Overview</h1>
+          <p className="page-subtitle">
+            Welcome back, Dr. Mitchell. Lecture schedules, course rosters, and class metrics.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/attendance" className="btn-primary btn-sm">
+            <AttendanceIcon className="w-4 h-4" />
+            <span>Mark Class Attendance</span>
+          </Link>
+        </div>
       </div>
 
-      {/* ─── Stat Cards ─── */}
+      {/* Primary KPI Stats Grid */}
       <div className="grid-4">
         {dashboardStats.map((stat) => (
-          <div key={stat.label} className="stat-card">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">{stat.icon}</span>
-              <span className={`badge ${
-                stat.trend === "up" ? "badge-green" : stat.trend === "down" ? "badge-red" : "badge-gray"
-              }`}>
-                {stat.change}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-              <div className="text-xs text-gray-500 font-medium mt-0.5">{stat.label}</div>
-            </div>
-          </div>
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            change={stat.change}
+            trend={stat.trend}
+            icon={<DynamicNavIcon name={stat.icon} className="w-5 h-5 text-[#bf783e]" />}
+            iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+          />
         ))}
       </div>
 
+      {/* Main Grid: Activity & Alerts */}
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* ─── Recent Activity ─── */}
-        <div className="lg:col-span-2 card-flat">
-          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="section-heading mb-0">Recent Activity</h2>
-            <button className="btn-ghost text-blue-600">
-              View All
-            </button>
+        {/* Recent Activity */}
+        <div className="lg:col-span-2 card-flat overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-[#181818]">
+            <div>
+              <h2 className="section-heading mb-0">Recent Academic Activity</h2>
+              <p className="text-xs text-white/50 mt-0.5 font-light">Submissions, grades, and attendance logs</p>
+            </div>
+            <Badge variant="blue">{recentActivities.length} events</Badge>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-white/5">
             {recentActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors"
+                className="flex items-start gap-3.5 px-6 py-4 hover:bg-white/[0.02] transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5">
+                <div className="w-9 h-9 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-xs">
                   {activity.user
                     .split(" ")
                     .map((w) => w[0])
@@ -64,64 +80,111 @@ export default function DashboardPage() {
                     .slice(0, 2)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium text-gray-900">{activity.user}</span>{" "}
-                    {activity.action}
+                  <p className="text-xs sm:text-sm text-white/80 leading-snug font-light">
+                    <span className="font-bold text-[#f4f6d6]">{activity.user}</span>{" "}
+                    <span className="text-white/70">{activity.action}</span>
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{activity.time}</p>
+                  <p className="text-[11px] text-white/40 font-medium mt-1">{activity.time}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* ─── Alerts ─── */}
-        <div className="card-flat">
-          <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="section-heading mb-0">Active Alerts</h2>
-            <span className="badge badge-red">{alerts.length}</span>
-          </div>
-          <div className="p-4 space-y-3">
-            {alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`alert-banner ${alertSeverityStyles[alert.severity] || "alert-banner-info"}`}
-              >
-                <div className="flex-1">
-                  <div className="font-semibold text-sm">{alert.title}</div>
-                  <p className="text-xs mt-0.5 opacity-80">{alert.message}</p>
-                  <p className="text-xs mt-1 opacity-60">{alert.time}</p>
+        {/* Active Alerts */}
+        <div className="card-flat overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-[#181818]">
+              <h2 className="section-heading mb-0">System Bulletins</h2>
+              <Badge variant="red" dot>{alerts.length} active</Badge>
+            </div>
+            <div className="p-5 space-y-3">
+              {alerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`alert-banner ${
+                    alertSeverityStyles[alert.severity] || "alert-banner-info"
+                  }`}
+                >
+                  <div className="flex-1">
+                    <div className="font-bold text-xs sm:text-sm">{alert.title}</div>
+                    <p className="text-xs mt-0.5 opacity-85 leading-relaxed font-light">{alert.message}</p>
+                    <p className="text-[10px] mt-1.5 opacity-50 font-semibold">{alert.time}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-white/10 bg-[#181818]/60">
+            <Link
+              href="/dashboard/schedule"
+              className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#bf783e] hover:underline"
+            >
+              <span>View Weekly Timetable</span>
+              <ChevronRightIcon className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* ─── Quick Actions ─── */}
-      <div className="card-flat p-5">
-        <h2 className="section-heading">Quick Actions</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { icon: "📝", label: "Add New Student", desc: "Register a new student" },
-            { icon: "📋", label: "Take Attendance", desc: "Mark class attendance" },
-            { icon: "📊", label: "Generate Report", desc: "Analytics & reports" },
-            { icon: "🚨", label: "Report Incident", desc: "Campus safety alert" },
-          ].map((action) => (
-            <button
-              key={action.label}
-              className="card group flex items-center gap-3 p-4 hover:border-blue-200 text-left"
-            >
-              <span className="text-2xl group-hover:scale-110 transition-transform">
-                {action.icon}
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">{action.label}</div>
-                <div className="text-xs text-gray-500">{action.desc}</div>
-              </div>
-            </button>
-          ))}
-        </div>
+      {/* Quick Action Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Link
+          href="/dashboard/students"
+          className="card group p-5 flex items-center gap-4 hover:border-[#bf783e]/50"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/5 text-[#f4f6d6] flex items-center justify-center group-hover:bg-[#f4f6d6] group-hover:text-[#0e0e0e] transition-all border border-white/10">
+            <StudentsIcon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-serif text-sm font-normal text-[#f4f6d6]">Student Rosters</div>
+            <div className="text-xs text-white/50 font-light mt-0.5">View enrolled classes</div>
+          </div>
+          <ChevronRightIcon className="w-4 h-4 text-white/30 group-hover:text-[#bf783e] group-hover:translate-x-0.5 transition-all" />
+        </Link>
+
+        <Link
+          href="/dashboard/attendance"
+          className="card group p-5 flex items-center gap-4 hover:border-[#bf783e]/50"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/5 text-[#f4f6d6] flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all border border-white/10">
+            <AttendanceIcon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-serif text-sm font-normal text-[#f4f6d6]">Class Attendance</div>
+            <div className="text-xs text-white/50 font-light mt-0.5">Record daily lectures</div>
+          </div>
+          <ChevronRightIcon className="w-4 h-4 text-white/30 group-hover:text-[#bf783e] group-hover:translate-x-0.5 transition-all" />
+        </Link>
+
+        <Link
+          href="/dashboard/schedule"
+          className="card group p-5 flex items-center gap-4 hover:border-[#bf783e]/50"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/5 text-[#f4f6d6] flex items-center justify-center group-hover:bg-[#bf783e] group-hover:text-white transition-all border border-white/10">
+            <DashboardIcon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-serif text-sm font-normal text-[#f4f6d6]">Timetable Grid</div>
+            <div className="text-xs text-white/50 font-light mt-0.5">Weekly class hours</div>
+          </div>
+          <ChevronRightIcon className="w-4 h-4 text-white/30 group-hover:text-[#bf783e] group-hover:translate-x-0.5 transition-all" />
+        </Link>
+
+        <Link
+          href="/admin/incidents"
+          className="card group p-5 flex items-center gap-4 hover:border-[#bf783e]/50"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/5 text-[#f4f6d6] flex items-center justify-center group-hover:bg-rose-600 group-hover:text-white transition-all border border-white/10">
+            <IncidentsIcon className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-serif text-sm font-normal text-[#f4f6d6]">Safety Alerts</div>
+            <div className="text-xs text-white/50 font-light mt-0.5">Campus incident reports</div>
+          </div>
+          <ChevronRightIcon className="w-4 h-4 text-white/30 group-hover:text-[#bf783e] group-hover:translate-x-0.5 transition-all" />
+        </Link>
       </div>
     </div>
   );

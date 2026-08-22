@@ -1,21 +1,55 @@
 // ============================================================
-// Smart Campus ERP — Student Announcements v2
+// Smart Campus ERP — Student Announcements (Live Supabase + Fallback)
 // ============================================================
 "use client";
 
-import { useState } from "react";
-import { announcements } from "@/lib/mock-data-step2";
+import { useState, useEffect } from "react";
+import { announcements as defaultAnnouncements } from "@/lib/mock-data-step2";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Announcement } from "@/types";
+import Badge, { type BadgeVariant } from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
+import { CheckIcon, AnnouncementsIcon } from "@/components/ui/Icons";
 
-const priorityConfig: Record<string, { badge: string; dot: string; bg: string }> = {
-  high: { badge: "badge-red", dot: "bg-red-500", bg: "border-l-red-500" },
-  medium: { badge: "badge-amber", dot: "bg-amber-500", bg: "border-l-amber-500" },
-  low: { badge: "badge-blue", dot: "bg-blue-500", bg: "border-l-blue-500" },
+const priorityVariants: Record<string, { badge: BadgeVariant; border: string }> = {
+  high: { badge: "red", border: "border-l-rose-500" },
+  medium: { badge: "amber", border: "border-l-[#bf783e]" },
+  low: { badge: "blue", border: "border-l-[#f4f6d6]" },
 };
 
 export default function StudentAnnouncementsPage() {
-  const [items, setItems] = useState<Announcement[]>(announcements);
+  const [items, setItems] = useState<Announcement[]>(defaultAnnouncements);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+
+  useEffect(() => {
+    async function loadAnnouncements() {
+      try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("*")
+          .order("date", { ascending: false });
+
+        if (error) {
+          console.warn("[StudentAnnouncements] Supabase query error, using defaults:", error.message);
+        } else if (data && data.length > 0) {
+          const mapped: Announcement[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            date: d.date,
+            read: false,
+            priority: d.priority || "medium",
+          }));
+          setItems(mapped);
+        }
+      } catch (err) {
+        console.warn("[StudentAnnouncements] Exception loading announcements:", err);
+      }
+    }
+
+    loadAnnouncements();
+  }, []);
 
   const markRead = (id: string) => {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
@@ -29,99 +63,127 @@ export default function StudentAnnouncementsPage() {
   const filtered = filter === "unread" ? items.filter((a) => !a.read) : items;
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="page-title">Announcements</h1>
-            <p className="page-subtitle">Campus-wide updates and notifications</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {unreadCount > 0 && (
-              <>
-                <span className="badge badge-red">{unreadCount} unread</span>
-                <button onClick={markAllRead} className="btn-ghost">
-                  Mark all read
-                </button>
-              </>
-            )}
-          </div>
+    <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Campus Announcements</h1>
+          <p className="page-subtitle">
+            Official broadcasts, department notices, and campus safety bulletins.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {unreadCount > 0 && (
+            <>
+              <Badge variant="blue" dot>{unreadCount} Unread</Badge>
+              <button
+                onClick={markAllRead}
+                className="btn-secondary btn-sm"
+              >
+                Mark all read
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit">
+      {/* Filter Tabs */}
+      <div className="flex gap-1.5 p-1 bg-white/5 border border-white/10 rounded-full w-fit">
         {(["all", "unread"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all capitalize ${
               filter === f
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-[#f4f6d6] text-[#0e0e0e] shadow-sm"
+                : "text-white/60 hover:text-white"
             }`}
           >
-            {f === "all" ? "All" : "Unread"}
-            {f === "unread" && unreadCount > 0 && (
-              <span className="ml-1.5 text-xs">({unreadCount})</span>
-            )}
+            {f === "all" ? "All Notices" : `Unread (${unreadCount})`}
           </button>
         ))}
       </div>
 
-      {/* Announcements list */}
-      <div className="space-y-3">
+      {/* Announcements Stream */}
+      <div className="space-y-3.5">
         {filtered.length === 0 && (
-          <div className="empty-state card-flat">
-            <div className="text-3xl mb-3">📭</div>
-            <p className="text-sm text-gray-500">
-              {filter === "unread" ? "All caught up! No unread announcements." : "No announcements yet."}
-            </p>
+          <div className="card-flat">
+            <EmptyState
+              icon={<CheckIcon className="w-6 h-6 text-emerald-400" />}
+              title={
+                filter === "unread"
+                  ? "You're completely caught up!"
+                  : "No announcements recorded"
+              }
+              description="Check back later for university-wide alerts, exam notifications, and campus updates."
+            />
           </div>
         )}
 
         {filtered.map((a) => {
-          const config = priorityConfig[a.priority] || priorityConfig.low;
+          const config = priorityVariants[a.priority] || priorityVariants.low;
           return (
-            <button
+            <div
               key={a.id}
               onClick={() => markRead(a.id)}
-              className={`w-full text-left card-flat p-5 transition-all border-l-4 ${
-                config.bg
+              className={`w-full text-left card-flat p-5 sm:p-6 transition-all duration-150 border-l-4 cursor-pointer hover:border-l-[#bf783e] hover:bg-white/[0.02] ${
+                config.border
               } ${
                 !a.read
-                  ? "bg-blue-50/30 hover:bg-blue-50/50"
-                  : "hover:bg-gray-50"
+                  ? "bg-white/[0.04] border-white/15"
+                  : "bg-[#141414]"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     {!a.read && (
-                      <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-[#bf783e] shrink-0 ring-2 ring-[#bf783e]/30 animate-pulse" />
                     )}
-                    <h3 className={`text-sm font-semibold ${
-                      a.read ? "text-gray-600" : "text-gray-900"
-                    }`}>
+                    <h3
+                      className={`text-sm sm:text-base font-bold tracking-tight ${
+                        a.read ? "text-white/70" : "text-[#f4f6d6]"
+                      }`}
+                    >
                       {a.title}
                     </h3>
-                    <span className={`badge ${config.badge}`}>
-                      {a.priority}
-                    </span>
+                    <Badge variant={config.badge}>
+                      {a.priority.toUpperCase()} PRIORITY
+                    </Badge>
                     {!a.read && (
-                      <span className="badge badge-blue">New</span>
+                      <Badge variant="blue">NEW</Badge>
                     )}
                   </div>
-                  <p className="mt-2 text-sm text-gray-500 leading-relaxed line-clamp-2">
+
+                  <p className="mt-2 text-xs sm:text-sm text-white/60 leading-relaxed font-light">
                     {a.description}
                   </p>
-                  <p className="mt-2 text-xs text-gray-400">{a.date}</p>
+
+                  <div className="mt-3 flex items-center gap-2 text-xs text-white/40 font-medium">
+                    <AnnouncementsIcon className="w-3.5 h-3.5 text-[#bf783e]" />
+                    <span>{a.date}</span>
+                    <span>•</span>
+                    <span>Verified Broadcast</span>
+                  </div>
                 </div>
-                <svg className="w-4 h-4 text-gray-300 shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                </svg>
+
+                <div className="text-white/30 hover:text-white transition-colors shrink-0 mt-1">
+                  {a.read ? (
+                    <span className="text-[11px] font-medium text-white/40">Read</span>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markRead(a.id);
+                      }}
+                      className="text-xs font-bold text-[#bf783e] hover:underline"
+                    >
+                      Mark read
+                    </button>
+                  )}
+                </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

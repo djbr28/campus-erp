@@ -28,7 +28,7 @@ export default function RoleDashboardLayout({
   children,
 }: RoleDashboardLayoutProps) {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-[#0e0e0e] text-[#f4f6d6]">
       <RoleSidebar
         brandName={brandName}
         brandIcon={brandIcon}

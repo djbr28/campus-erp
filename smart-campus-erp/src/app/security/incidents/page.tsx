@@ -1,11 +1,28 @@
 // ============================================================
-// Smart Campus ERP — Security Incidents Page
+// Smart Campus ERP — Security Incidents Operations (Editorial Aesthetic)
 // ============================================================
 "use client";
 
 import { useState } from "react";
 import { incidents } from "@/lib/mock-data-step2";
 import type { Incident } from "@/types";
+import Badge, { type BadgeVariant } from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
+import StatCard from "@/components/ui/StatCard";
+import { IncidentsIcon, CheckIcon, SecurityIcon } from "@/components/ui/Icons";
+
+const severityVariants: Record<Incident["severity"], BadgeVariant> = {
+  low: "green",
+  medium: "amber",
+  high: "red",
+  critical: "red-strong",
+};
+
+const statusVariants: Record<Incident["status"], BadgeVariant> = {
+  Open: "blue",
+  "In Progress": "amber",
+  Resolved: "green",
+};
 
 export default function SecurityIncidentsPage() {
   const [items, setItems] = useState<Incident[]>(incidents);
@@ -25,108 +42,136 @@ export default function SecurityIncidentsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Incident Management</h1>
-        <p className="page-subtitle">View, assign, and resolve campus security incidents</p>
+    <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title">Security Incident Operations</h1>
+          <p className="page-subtitle">
+            Officer Daniel Park · Review incident telemetry, assign dispatched security personnel, and log resolutions.
+          </p>
+        </div>
+        <Badge variant={activeCount > 0 ? "red" : "green"} dot>
+          {activeCount} Active Cases
+        </Badge>
       </div>
 
-      {/* Stats */}
+      {/* KPI Stats */}
       <div className="grid-3">
-        <div className="stat-card">
-          <div className="text-2xl font-bold text-gray-900">{items.length}</div>
-          <div className="text-xs text-gray-500 font-medium">Total Incidents</div>
-        </div>
-        <div className="stat-card">
-          <div className="text-2xl font-bold text-red-600">{activeCount}</div>
-          <div className="text-xs text-gray-500 font-medium">Active</div>
-        </div>
-        <div className="stat-card">
-          <div className="text-2xl font-bold text-green-600">{resolvedCount}</div>
-          <div className="text-xs text-gray-500 font-medium">Resolved</div>
-        </div>
+        <StatCard
+          label="Total Incident Log"
+          value={items.length}
+          icon={<SecurityIcon className="w-5 h-5 text-[#bf783e]" />}
+          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+        />
+        <StatCard
+          label="Active & Dispatched"
+          value={activeCount}
+          change={activeCount > 0 ? "Action Req" : "Clear"}
+          trend={activeCount > 0 ? "down" : "up"}
+          icon={<IncidentsIcon className="w-5 h-5 text-rose-400" />}
+          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+        />
+        <StatCard
+          label="Resolved Cases"
+          value={resolvedCount}
+          change="Completed"
+          trend="up"
+          icon={<CheckIcon className="w-5 h-5 text-emerald-400" />}
+          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+        />
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2">
+      {/* Filter Tabs */}
+      <div className="flex gap-1.5 p-1 bg-white/5 border border-white/10 rounded-full w-fit">
         {(["all", "active", "resolved"] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-1.5 text-xs font-bold rounded-full transition-all capitalize ${
               filter === f
-                ? "bg-blue-600 text-white"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                ? "bg-[#f4f6d6] text-[#0e0e0e] shadow-sm"
+                : "text-white/60 hover:text-white"
             }`}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === "all" ? "All Cases" : `${f} (${f === "active" ? activeCount : resolvedCount})`}
           </button>
         ))}
       </div>
 
-      {/* Incidents list */}
-      <div className="card-flat">
-        <div className="divide-y divide-gray-100">
+      {/* Incidents Container */}
+      <div className="card-flat overflow-hidden bg-[#141414] border border-white/10">
+        <div className="divide-y divide-white/5">
           {filtered.length === 0 && (
-            <div className="p-10 text-center text-sm text-gray-400">No incidents match this filter.</div>
+            <EmptyState
+              icon={<CheckIcon className="w-6 h-6 text-emerald-400" />}
+              title="No security incidents in this queue"
+              description="All campus zones report normal operational status under this filter."
+            />
           )}
+
           {filtered.map((inc) => (
             <div
               key={inc.id}
-              className={`p-5 transition-colors ${
-                inc.status === "Resolved" ? "opacity-60" : "hover:bg-gray-50"
+              className={`p-6 transition-colors ${
+                inc.status === "Resolved" ? "opacity-50 hover:opacity-100" : "hover:bg-white/[0.02]"
               } ${
                 inc.severity === "critical" && inc.status !== "Resolved"
-                  ? "bg-red-50/50 border-l-4 border-l-red-500"
+                  ? "bg-rose-950/20 border-l-4 border-l-rose-500"
                   : ""
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-gray-900">{inc.title}</span>
-                    <span
-                      className={`badge ${
-                        inc.severity === "low"
-                          ? "badge-green"
-                          : inc.severity === "medium"
-                          ? "badge-amber"
-                          : inc.severity === "high"
-                          ? "badge-red"
-                          : "badge-red-strong"
-                      }`}
-                    >
-                      {inc.severity}
-                    </span>
-                    <span
-                      className={`badge ${
-                        inc.status === "Open"
-                          ? "badge-blue"
-                          : inc.status === "In Progress"
-                          ? "badge-amber"
-                          : "badge-green"
-                      }`}
-                    >
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-white/40">{inc.id}</span>
+                    <span className="text-sm font-bold text-[#f4f6d6]">{inc.title}</span>
+                    <Badge variant={severityVariants[inc.severity]}>
+                      {inc.severity.toUpperCase()}
+                    </Badge>
+                    <Badge variant={statusVariants[inc.status]} dot>
                       {inc.status}
-                    </span>
+                    </Badge>
                   </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    {inc.category} · {inc.location} · {inc.time}
+
+                  <div className="mt-2 text-xs text-white/50 flex items-center gap-2.5 flex-wrap font-light">
+                    <span>Category: <strong className="text-white/80 font-medium">{inc.category}</strong></span>
+                    <span>•</span>
+                    <span>Location: <strong className="text-white/80 font-medium">{inc.location}</strong></span>
+                    <span>•</span>
+                    <span>Reported: <strong className="text-white/80 font-medium">{inc.time}</strong></span>
                   </div>
-                  <div className="mt-1 text-xs text-gray-400 line-clamp-1">{inc.description}</div>
+
+                  <div className="mt-2 text-xs text-white/70 leading-relaxed max-w-2xl font-light">
+                    {inc.description}
+                  </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
+
+                <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
                   {inc.status !== "Resolved" && (
                     <>
-                      <button onClick={() => updateStatus(inc.id, "In Progress")} className="btn-primary btn-sm">
-                        Assign
-                      </button>
-                      <button onClick={() => updateStatus(inc.id, "Resolved")} className="btn-secondary btn-sm">
+                      {inc.status === "Open" && (
+                        <button
+                          onClick={() => updateStatus(inc.id, "In Progress")}
+                          className="btn-primary btn-sm"
+                        >
+                          Assign Unit
+                        </button>
+                      )}
+                      <button
+                        onClick={() => updateStatus(inc.id, "Resolved")}
+                        className="btn-secondary btn-sm"
+                      >
                         Mark Resolved
                       </button>
                     </>
                   )}
-                  {inc.status === "Resolved" && <span className="badge badge-green">Resolved</span>}
+                  {inc.status === "Resolved" && (
+                    <span className="text-xs font-bold text-emerald-300 px-3.5 py-1 bg-emerald-950/70 rounded-full border border-emerald-700/50 inline-flex items-center gap-1.5">
+                      <CheckIcon className="w-3.5 h-3.5" />
+                      <span>Resolved</span>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

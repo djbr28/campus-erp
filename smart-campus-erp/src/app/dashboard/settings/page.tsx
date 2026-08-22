@@ -1,37 +1,49 @@
 // ============================================================
-// Smart Campus ERP — Settings Page v2
+// Smart Campus ERP — Settings Page (Editorial Aesthetic)
 // ============================================================
 "use client";
 
 import { useState } from "react";
+import Badge from "@/components/ui/Badge";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("profile");
+  const [notifStates, setNotifStates] = useState<Record<string, boolean>>({
+    email: true,
+    push: true,
+    sms: false,
+    digest: true,
+  });
 
   const tabs = [
-    { id: "profile", label: "Profile" },
-    { id: "notifications", label: "Notifications" },
-    { id: "appearance", label: "Appearance" },
-    { id: "security", label: "Security" },
+    { id: "profile", label: "Profile & Information" },
+    { id: "notifications", label: "Notification Channels" },
+    { id: "appearance", label: "Interface Theme" },
+    { id: "security", label: "Password & Security" },
   ];
 
+  const toggleNotif = (key: string) => {
+    setNotifStates((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Settings</h1>
-        <p className="page-subtitle">Manage your account and preferences</p>
+    <div className="space-y-6 animate-fade-in max-w-4xl text-[#f4f6d6]">
+      {/* Header */}
+      <div>
+        <h1 className="page-title">Account & System Settings</h1>
+        <p className="page-subtitle">Manage personal profile details, notifications, and security preferences.</p>
       </div>
 
-      {/* Tab navigation */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-lg w-fit overflow-x-auto">
+      {/* Tab Navigation */}
+      <div className="flex gap-1.5 p-1 bg-white/5 border border-white/10 rounded-full w-fit overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+            className={`px-4 py-2 text-xs font-bold rounded-full transition-all whitespace-nowrap ${
               activeTab === tab.id
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-[#f4f6d6] text-[#0e0e0e] shadow-sm"
+                : "text-white/60 hover:text-white"
             }`}
           >
             {tab.label}
@@ -39,23 +51,27 @@ export default function SettingsPage() {
         ))}
       </div>
 
+      {/* Profile Tab */}
       {activeTab === "profile" && (
-        <div className="card-flat p-6 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
+        <div className="card-flat p-6 sm:p-8 space-y-6 bg-[#141414] border border-white/10">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center text-xl font-extrabold shadow-sm ring-4 ring-white/10">
               SM
             </div>
             <div>
-              <button className="btn-secondary btn-sm">
-                Change Photo
-              </button>
-              <p className="text-xs text-gray-400 mt-1.5">JPG, PNG or GIF. Max 2MB.</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-serif text-base font-normal text-[#f4f6d6]">Dr. Sarah Mitchell</h3>
+                <Badge variant="blue">Faculty Admin</Badge>
+              </div>
+              <p className="text-xs text-white/50 mt-0.5 font-light">JPG, PNG or GIF format under 2MB.</p>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 pt-2">
             <div>
-              <label htmlFor="settings-name" className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+              <label htmlFor="settings-name" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1.5">
+                Full Name
+              </label>
               <input
                 id="settings-name"
                 type="text"
@@ -64,7 +80,9 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label htmlFor="settings-email" className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label htmlFor="settings-email" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1.5">
+                Institutional Email
+              </label>
               <input
                 id="settings-email"
                 type="email"
@@ -73,16 +91,20 @@ export default function SettingsPage() {
               />
             </div>
             <div>
-              <label htmlFor="settings-dept" className="block text-sm font-medium text-gray-700 mb-1.5">Department</label>
+              <label htmlFor="settings-dept" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1.5">
+                Assigned Department
+              </label>
               <input
                 id="settings-dept"
                 type="text"
-                defaultValue="Administration"
+                defaultValue="Computer Science & Engineering"
                 className="input"
               />
             </div>
             <div>
-              <label htmlFor="settings-phone" className="block text-sm font-medium text-gray-700 mb-1.5">Phone</label>
+              <label htmlFor="settings-phone" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1.5">
+                Contact Phone
+              </label>
               <input
                 id="settings-phone"
                 type="tel"
@@ -92,105 +114,123 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <button className="btn-primary">
-            Save Changes
-          </button>
+          <div className="pt-2">
+            <button className="btn-primary">
+              Save Profile Changes
+            </button>
+          </div>
         </div>
       )}
 
+      {/* Notifications Tab */}
       {activeTab === "notifications" && (
-        <div className="card-flat p-6 space-y-4">
+        <div className="card-flat p-6 sm:p-8 space-y-4 bg-[#141414] border border-white/10">
+          <div>
+            <h3 className="font-serif text-base font-normal text-[#f4f6d6]">Notification Preferences</h3>
+            <p className="text-xs text-white/50 mt-0.5 font-light">Control how and when you receive university alerts and digests.</p>
+          </div>
+
           {[
-            { label: "Email Notifications", desc: "Receive email for important updates", enabled: true },
-            { label: "Push Notifications", desc: "Browser push notifications", enabled: true },
-            { label: "SMS Alerts", desc: "Critical safety alerts via SMS", enabled: false },
-            { label: "Weekly Digest", desc: "Summary of campus activity", enabled: true },
+            { key: "email", label: "Email Notifications", desc: "Receive immediate email alerts for high-priority incidents and messages" },
+            { key: "push", label: "Browser Push Notifications", desc: "Show desktop popups when students submit project reports or incident tickets" },
+            { key: "sms", label: "Emergency SMS Alerts", desc: "Receive urgent campus safety broadcasts directly on your mobile device" },
+            { key: "digest", label: "Weekly Academic Digest", desc: "Receive a compiled weekly summary of class attendance and department performance" },
           ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <div
+              key={item.key}
+              onClick={() => toggleNotif(item.key)}
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/10 hover:bg-white/[0.02] transition-colors cursor-pointer bg-[#181818]"
+            >
               <div>
-                <div className="text-sm font-medium text-gray-900">{item.label}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{item.desc}</div>
+                <div className="text-sm font-bold text-[#f4f6d6]">{item.label}</div>
+                <div className="text-xs text-white/50 mt-0.5 font-light">{item.desc}</div>
               </div>
               <div
-                className={`w-10 h-6 rounded-full transition-colors cursor-pointer flex items-center px-1 ${
-                  item.enabled ? "bg-blue-600" : "bg-gray-300"
+                className={`w-11 h-6 rounded-full transition-colors flex items-center px-1 shrink-0 ${
+                  notifStates[item.key] ? "bg-[#bf783e]" : "bg-white/20"
                 }`}
               >
-                <div className={`w-4 h-4 rounded-full bg-white transition-transform shadow-sm ${
-                  item.enabled ? "translate-x-4" : ""
-                }`} />
+                <div
+                  className={`w-4 h-4 rounded-full bg-white transition-transform shadow-xs ${
+                    notifStates[item.key] ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
               </div>
             </div>
           ))}
         </div>
       )}
 
+      {/* Appearance Tab */}
       {activeTab === "appearance" && (
-        <div className="card-flat p-6 space-y-6">
+        <div className="card-flat p-6 sm:p-8 space-y-6 bg-[#141414] border border-white/10">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-3">Theme</label>
-            <div className="grid grid-cols-3 gap-3">
-              {(["Light", "Dark", "System"] as const).map((t) => (
-                <button
-                  key={t}
-                  className={`p-4 rounded-lg border-2 text-sm font-medium transition-all ${
-                    t === "Light"
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {t === "Light" ? "☀️" : t === "Dark" ? "🌙" : "💻"} {t}
-                </button>
-              ))}
-            </div>
+            <h3 className="font-serif text-base font-normal text-[#f4f6d6]">Interface Theme</h3>
+            <p className="text-xs text-white/50 mt-0.5 font-light">Customize the visual theme and contrast level of the ERP dashboard.</p>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Sidebar</label>
-            <p className="text-xs text-gray-500">Sidebar will always be visible on desktop.</p>
+
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { id: "dark", label: "Editorial Dark", icon: "🌙", active: true },
+              { id: "cream", label: "Warm Oat Cream", icon: "🌾", active: false },
+              { id: "system", label: "System Sync", icon: "💻", active: false },
+            ].map((theme) => (
+              <div
+                key={theme.id}
+                className={`p-4 rounded-2xl border text-center transition-all cursor-pointer ${
+                  theme.active
+                    ? "border-[#bf783e] bg-[#bf783e]/20 text-[#f4f6d6] shadow-sm"
+                    : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
+                }`}
+              >
+                <span className="text-2xl block mb-1">{theme.icon}</span>
+                <span className="text-xs font-bold block">{theme.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
+      {/* Security Tab */}
       {activeTab === "security" && (
-        <div className="card-flat p-6 space-y-6">
+        <div className="card-flat p-6 sm:p-8 space-y-6 bg-[#141414] border border-white/10">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">Change Password</h3>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor="current-pw" className="block text-xs font-medium text-gray-500 mb-1">Current Password</label>
-                <input id="current-pw" type="password" className="input" />
-              </div>
-              <div />
-              <div>
-                <label htmlFor="new-pw" className="block text-xs font-medium text-gray-500 mb-1">New Password</label>
-                <input id="new-pw" type="password" className="input" />
-              </div>
-              <div>
-                <label htmlFor="confirm-pw" className="block text-xs font-medium text-gray-500 mb-1">Confirm Password</label>
-                <input id="confirm-pw" type="password" className="input" />
-              </div>
+            <h3 className="font-serif text-base font-normal text-[#f4f6d6]">Change Password</h3>
+            <p className="text-xs text-white/50 mt-0.5 font-light">Ensure your account uses a strong, unique password.</p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label htmlFor="current-pw" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1">
+                Current Password
+              </label>
+              <input id="current-pw" type="password" placeholder="••••••••" className="input" />
             </div>
-            <button className="btn-primary mt-3">
-              Update Password
-            </button>
+            <div>
+              <label htmlFor="new-pw" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1">
+                New Password
+              </label>
+              <input id="new-pw" type="password" placeholder="••••••••" className="input" />
+            </div>
+            <div>
+              <label htmlFor="confirm-pw" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1">
+                Confirm New Password
+              </label>
+              <input id="confirm-pw" type="password" placeholder="••••••••" className="input" />
+            </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-semibold text-gray-900">Two-Factor Authentication</h3>
-            <p className="text-xs text-gray-500 mt-1">Add an extra layer of security to your account.</p>
-            <button className="btn-primary mt-3" style={{ background: "var(--green-600)" }}>
-              Enable 2FA
-            </button>
-          </div>
+          <button className="btn-primary btn-sm">
+            Update Password
+          </button>
 
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-semibold text-gray-900">Active Sessions</h3>
-            <div className="mt-3 p-4 rounded-lg bg-gray-50 flex items-center justify-between">
+          <div className="border-t border-white/10 pt-6">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-gray-900">Chrome on macOS</div>
-                <div className="text-xs text-gray-500">Last active: now</div>
+                <h4 className="text-sm font-bold text-[#f4f6d6]">Two-Factor Authentication (2FA)</h4>
+                <p className="text-xs text-white/50 mt-0.5 font-light">Add an extra verification step when signing in to your institutional account.</p>
               </div>
-              <span className="badge badge-green">Current</span>
+              <Badge variant="green" dot>Active</Badge>
             </div>
           </div>
         </div>

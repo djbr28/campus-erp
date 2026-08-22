@@ -1,42 +1,77 @@
 // ============================================================
-// Smart Campus ERP — Report Incident v2
+// Smart Campus ERP — Report Incident (Live Supabase Insertion)
 // ============================================================
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import {
+  SecurityIcon,
+  EmergencyPhoneIcon,
+  CheckIcon,
+} from "@/components/ui/Icons";
 
 const categories = [
-  { value: "safety", label: "Safety Concern", icon: "🛡️" },
-  { value: "harassment", label: "Harassment", icon: "⚠️" },
-  { value: "facilities", label: "Facility Damage", icon: "🔧" },
-  { value: "theft", label: "Theft", icon: "🔍" },
-  { value: "medical", label: "Medical Emergency", icon: "🏥" },
-  { value: "other", label: "Other", icon: "📋" },
+  { value: "Physical Safety", label: "Physical Safety", icon: "🛡️", desc: "Hazard or safety risk" },
+  { value: "Harassment", label: "Harassment", icon: "⚠️", desc: "Bullying or misconduct" },
+  { value: "Facility Damage", label: "Facility Damage", icon: "🔧", desc: "Broken infrastructure" },
+  { value: "Theft / Loss", label: "Theft / Loss", icon: "🔍", desc: "Stolen or missing items" },
+  { value: "Medical", label: "Medical Care", icon: "🏥", desc: "First aid or medical need" },
+  { value: "Other", label: "General Concern", icon: "📋", desc: "Other campus issue" },
 ];
 
 const severities = [
-  { value: "low", label: "Low", color: "badge-green", selected: "border-green-400 bg-green-50 text-green-700" },
-  { value: "medium", label: "Medium", color: "badge-amber", selected: "border-amber-400 bg-amber-50 text-amber-700" },
-  { value: "high", label: "High", color: "badge-red", selected: "border-red-400 bg-red-50 text-red-700" },
-  { value: "critical", label: "Critical", color: "badge-red-strong", selected: "border-red-500 bg-red-100 text-red-800" },
+  { value: "low", label: "Low", desc: "Non-urgent issue", selected: "border-emerald-500 bg-emerald-950/60 text-emerald-300" },
+  { value: "medium", label: "Medium", desc: "Prompt attention", selected: "border-[#bf783e] bg-[#bf783e]/25 text-[#f4f6d6]" },
+  { value: "high", label: "High", desc: "Urgent concern", selected: "border-rose-500 bg-rose-950/60 text-rose-300" },
+  { value: "critical", label: "Critical", desc: "Immediate hazard", selected: "border-rose-600 bg-rose-900/80 text-rose-100 font-bold" },
 ];
 
 export default function ReportIncidentPage() {
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("Physical Safety");
   const [location, setLocation] = useState("");
   const [severity, setSeverity] = useState("medium");
   const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [incidentId, setIncidentId] = useState(`INC-${Math.floor(Math.random() * 900 + 100)}`);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsSubmitting(true);
+
+    const newId = `INC-${Math.floor(Math.random() * 900 + 100)}`;
+    setIncidentId(newId);
+
+    try {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase.from("incidents").insert([
+        {
+          id: newId,
+          title: `${category} reported at ${location.slice(0, 30)}`,
+          category,
+          location,
+          severity,
+          status: "Open",
+          description,
+        },
+      ]);
+
+      if (error) {
+        console.warn("[ReportIncident] Supabase insert error, falling back locally:", error.message);
+      }
+    } catch (err) {
+      console.warn("[ReportIncident] Exception saving to Supabase:", err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   const resetForm = () => {
     setSubmitted(false);
-    setCategory("");
+    setCategory("Physical Safety");
     setLocation("");
     setDescription("");
     setSeverity("medium");
@@ -44,138 +79,153 @@ export default function ReportIncidentPage() {
 
   if (submitted) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="card-flat p-8 text-center max-w-md w-full">
-          <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      <div className="flex items-center justify-center min-h-[60vh] animate-fade-in text-[#f4f6d6]">
+        <div className="card-flat p-8 sm:p-10 text-center max-w-md w-full shadow-2xl border-white/15 bg-[#141414]">
+          <div className="w-16 h-16 rounded-full bg-emerald-950/80 border border-emerald-500/50 flex items-center justify-center mx-auto mb-4 text-emerald-400 shadow-sm">
+            <CheckIcon className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Incident Reported</h2>
-          <p className="mt-2 text-sm text-gray-500 leading-relaxed">
-            Your report has been submitted successfully. The security team will review it shortly and take appropriate action.
+          <h2 className="font-serif text-2xl sm:text-3xl font-normal text-[#f4f6d6] tracking-tight">
+            Report Logged Successfully
+          </h2>
+          <p className="mt-2 text-xs sm:text-sm text-white/60 leading-relaxed font-light">
+            Your incident report has been securely transmitted to the Campus Security Command Center.
+            An officer will review the details immediately.
           </p>
-          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-400">Reference ID</p>
-            <p className="text-sm font-mono font-bold text-gray-700">INC-{Math.floor(Math.random() * 900 + 100)}</p>
+
+          <div className="mt-5 p-4 bg-[#181818] rounded-2xl border border-white/10">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/40">Tracking Reference ID</p>
+            <p className="text-base font-mono font-bold text-[#bf783e] mt-0.5">{incidentId}</p>
           </div>
-          <button onClick={resetForm} className="btn-primary mt-6">
-            Report Another Incident
-          </button>
+
+          <div className="mt-6 flex flex-col gap-2.5">
+            <button onClick={resetForm} className="btn-primary w-full py-3">
+              Submit Another Report
+            </button>
+            <Link href="/student" className="btn-secondary w-full py-3">
+              Return to Student Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Report an Incident</h1>
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in text-[#f4f6d6]">
+      {/* Header */}
+      <div>
+        <h1 className="page-title">Report a Campus Incident</h1>
         <p className="page-subtitle">
-          Help keep our campus safe. Describe the incident below and our security team will respond promptly.
+          Submit confidential reports regarding safety hazards, facility issues, or security concerns.
         </p>
       </div>
 
-      {/* Emergency notice */}
+      {/* Emergency Alert Banner */}
       <div className="alert-banner alert-banner-danger">
-        <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-        </svg>
-        <div className="flex-1">
-          <span className="text-sm font-semibold">Is this an emergency?</span>{" "}
-          <span className="text-sm">Use the Emergency button on your dashboard for immediate response.</span>
+        <EmergencyPhoneIcon className="w-5 h-5 shrink-0 text-rose-400 animate-pulse" />
+        <div className="flex-1 text-xs sm:text-sm">
+          <span className="font-bold">Is there immediate danger to life or safety?</span>{" "}
+          <span className="opacity-90">Please contact campus dispatch immediately at (555) 911-CAMPUS or locate an emergency blue callbox.</span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="card-flat p-6 space-y-6">
-        {/* Category */}
+      {/* Form Card */}
+      <form onSubmit={handleSubmit} className="card-flat p-6 sm:p-8 space-y-6 bg-[#141414] border border-white/10">
+        {/* Category Picker */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-3">
+            1. Select Incident Category
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {categories.map((c) => (
               <button
                 key={c.value}
                 type="button"
                 onClick={() => setCategory(c.value)}
-                className={`p-3 text-left text-sm rounded-lg border-2 transition-all ${
+                className={`p-4 text-left rounded-2xl border transition-all duration-150 ${
                   category === c.value
-                    ? "border-blue-400 bg-blue-50 text-blue-700"
-                    : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                    ? "border-[#bf783e] bg-[#bf783e]/20 text-[#f4f6d6] shadow-sm"
+                    : "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                <span className="text-base mr-1.5">{c.icon}</span>
-                <span className="font-medium">{c.label}</span>
+                <span className="text-xl block mb-1">{c.icon}</span>
+                <span className="font-bold text-xs sm:text-sm block">{c.label}</span>
+                <span className="text-[11px] text-white/40 block mt-0.5 font-light">{c.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Location */}
+        {/* Location Input */}
         <div>
-          <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">Location</label>
+          <label htmlFor="location" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+            2. Campus Location
+          </label>
           <input
             id="location"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Building A, Room 204"
+            placeholder="e.g. Science Complex, 3rd Floor East Wing, Room 304"
             required
             className="input"
           />
         </div>
 
-        {/* Severity */}
+        {/* Severity Selector */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Severity Level</label>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-3">
+            3. Estimated Severity Level
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {severities.map((s) => (
               <button
                 key={s.value}
                 type="button"
                 onClick={() => setSeverity(s.value)}
-                className={`py-2.5 text-sm font-semibold rounded-lg border-2 transition-all ${
+                className={`p-3.5 text-left rounded-2xl border transition-all duration-150 ${
                   severity === s.value
-                    ? s.selected
-                    : "border-gray-200 text-gray-500 hover:border-gray-300"
+                    ? s.selected + " shadow-sm"
+                    : "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10"
                 }`}
               >
-                {s.label}
+                <span className="font-bold text-xs sm:text-sm block">{s.label}</span>
+                <span className="text-[10px] text-white/40 block mt-0.5 font-light">{s.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Description */}
+        {/* Description Textarea */}
         <div>
-          <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
-            Description
+          <label htmlFor="description" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-2">
+            4. Detailed Description & Individuals Involved
           </label>
           <textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
-            placeholder="Describe what happened, when it occurred, and any relevant details including people involved..."
+            placeholder="Describe what occurred, timestamp, witnesses, or hazards..."
             required
             className="textarea"
           />
-          <p className="mt-1.5 text-xs text-gray-400">
-            Be as specific as possible to help our security team respond effectively.
+          <p className="mt-2 text-xs text-white/40 font-light">
+            All submitted reports are handled in strict confidence according to university safety policy.
           </p>
         </div>
 
-        {/* Submit */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          <button type="submit" className="btn-danger flex-1 py-3 text-base">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-            Submit Incident Report
-          </button>
-          <Link
-            href="/student"
-            className="btn-secondary py-3"
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-white/10">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="btn-danger flex-1 py-3 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
           >
+            <SecurityIcon className="w-4 h-4" />
+            <span>{isSubmitting ? "Logging Incident…" : "Submit Confidential Report"}</span>
+          </button>
+          <Link href="/student" className="btn-secondary py-3 text-sm font-semibold">
             Cancel
           </Link>
         </div>

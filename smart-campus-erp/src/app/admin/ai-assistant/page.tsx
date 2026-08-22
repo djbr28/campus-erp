@@ -1,6 +1,6 @@
 // ============================================================
-// Smart Campus ERP — AI Assistant
-// Connected to server-side Groq AI
+// Smart Campus ERP — AI Assistant (Canva Editorial Aesthetic)
+// Connected to server-side Groq AI (/api/ai/assistant)
 // ============================================================
 "use client";
 
@@ -10,6 +10,7 @@ import {
   aiExampleQuestions,
 } from "@/lib/mock-data-step2";
 import type { ChatMessage } from "@/types";
+import { SparklesIcon } from "@/components/ui/Icons";
 
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>(aiInitialMessages);
@@ -34,11 +35,7 @@ export default function AIAssistantPage() {
       content: question,
     };
 
-    setMessages((previousMessages) => [
-      ...previousMessages,
-      userMessage,
-    ]);
-
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsTyping(true);
 
@@ -72,10 +69,7 @@ export default function AIAssistantPage() {
         content: answer,
       };
 
-      setMessages((previousMessages) => [
-        ...previousMessages,
-        assistantMessage,
-      ]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("AI Assistant error:", error);
 
@@ -83,13 +77,10 @@ export default function AIAssistantPage() {
         id: `ai-error-${Date.now()}`,
         role: "assistant",
         content:
-          "Sorry, I couldn't connect to the AI assistant right now. Please try again.",
+          "Sorry, I couldn't connect to the AI assistant right now. Please verify your connection and try again.",
       };
 
-      setMessages((previousMessages) => [
-        ...previousMessages,
-        errorMessage,
-      ]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
     }
@@ -98,129 +89,89 @@ export default function AIAssistantPage() {
   const showExamples = messages.length <= 1;
 
   return (
-    <div className="h-[calc(100vh-10rem)] flex flex-col">
+    <div className="h-[calc(100vh-10rem)] flex flex-col space-y-4 animate-fade-in text-[#f4f6d6]">
       {/* Header */}
-      <div className="page-header">
-        <h1 className="page-title">AI Assistant</h1>
-
-        <p className="page-subtitle">
-          Ask questions about campus data, incidents, and analytics
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="page-title flex items-center gap-3">
+            <span>Campus AI Assistant</span>
+            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-[10px] font-bold bg-[#bf783e]/20 text-[#f4f6d6] border border-[#bf783e]/40 uppercase tracking-widest font-sans">
+              Groq Powered
+            </span>
+          </h1>
+          <p className="page-subtitle">
+            Query institutional records, attendance patterns, and safety incidents using natural language.
+          </p>
+        </div>
       </div>
 
-      {/* Chat container */}
-      <div className="flex-1 card-flat flex flex-col overflow-hidden">
-        {/* Messages */}
+      {/* Chat Container */}
+      <div className="flex-1 card-flat flex flex-col overflow-hidden bg-[#141414] border border-white/10">
+        {/* Messages Feed */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {/* Empty state */}
-          {showExamples && messages.length === 0 && (
-            <div className="empty-state h-full">
-              <div className="w-16 h-16 rounded-2xl bg-purple-100 flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-purple-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
-                  />
-                </svg>
+          {messages.length === 0 && (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#bf783e] mb-3 shadow-xs">
+                <SparklesIcon className="w-7 h-7" />
               </div>
-
-              <h3 className="text-base font-bold text-gray-900">
-                Smart Campus AI
+              <h3 className="font-serif text-lg font-normal text-[#f4f6d6]">
+                How can I assist your campus today?
               </h3>
-
-              <p className="text-sm text-gray-500 mt-1">
-                Ask me anything about campus data and analytics.
+              <p className="text-xs text-white/50 max-w-sm mt-1 font-light">
+                Ask about student attendance rates, open security reports, or academic statistics.
               </p>
             </div>
           )}
 
-          {/* Chat messages */}
+          {/* Render Messages */}
           {messages.map((message) => (
             <div
               key={message.id}
               className={`flex ${
-                message.role === "user"
-                  ? "justify-end"
-                  : "justify-start"
-              }`}
+                message.role === "user" ? "justify-end" : "justify-start"
+              } animate-fade-in`}
             >
-              {/* AI icon */}
+              {/* AI Avatar */}
               {message.role === "assistant" && (
-                <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                  <svg
-                    className="w-3.5 h-3.5 text-purple-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09z"
-                    />
-                  </svg>
+                <div className="w-8 h-8 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center shrink-0 mr-3 mt-0.5 shadow-sm">
+                  <SparklesIcon className="w-4 h-4" />
                 </div>
               )}
 
-              {/* Message bubble */}
+              {/* Message Bubble */}
               <div
-                className={`max-w-[80%] sm:max-w-[70%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-[85%] sm:max-w-[75%] px-5 py-3.5 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap ${
                   message.role === "user"
-                    ? "bg-blue-600 text-white rounded-2xl rounded-br-md"
-                    : "bg-gray-100 text-gray-800 rounded-2xl rounded-bl-md"
+                    ? "bg-[#bf783e] text-white rounded-3xl rounded-br-xs shadow-md font-medium"
+                    : "bg-[#181818] text-[#f4f6d6] rounded-3xl rounded-bl-xs border border-white/10 shadow-xs font-light"
                 }`}
               >
-                {message.content
-                  .split(/(\*\*[^*]+\*\*)/)
-                  .map((part, index) => {
-                    if (
-                      part.startsWith("**") &&
-                      part.endsWith("**")
-                    ) {
-                      return (
-                        <strong key={index}>
-                          {part.slice(2, -2)}
-                        </strong>
-                      );
-                    }
-
-                    return <span key={index}>{part}</span>;
-                  })}
+                {message.content.split(/(\*\*[^*]+\*\*)/).map((part, index) => {
+                  if (part.startsWith("**") && part.endsWith("**")) {
+                    return (
+                      <strong key={index} className="font-bold text-white">
+                        {part.slice(2, -2)}
+                      </strong>
+                    );
+                  }
+                  return <span key={index}>{part}</span>;
+                })}
               </div>
             </div>
           ))}
 
-          {/* AI thinking indicator */}
+          {/* AI Thinking Animation */}
           {isTyping && (
-            <div className="flex justify-start">
-              <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mr-2">
-                <svg
-                  className="w-3.5 h-3.5 text-purple-600"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                  />
-                </svg>
+            <div className="flex justify-start animate-fade-in">
+              <div className="w-8 h-8 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center shrink-0 mr-3 shadow-sm">
+                <SparklesIcon className="w-4 h-4 animate-spin" />
               </div>
-
-              <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-md text-sm text-gray-500">
-                <span className="animate-pulse">
-                  Thinking...
-                </span>
+              <div className="bg-[#181818] border border-white/10 px-5 py-3 rounded-3xl rounded-bl-xs flex items-center gap-2 shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#bf783e] animate-bounce" />
+                <span className="w-2 h-2 rounded-full bg-[#bf783e] animate-bounce [animation-delay:0.15s]" />
+                <span className="w-2 h-2 rounded-full bg-[#bf783e] animate-bounce [animation-delay:0.3s]" />
+                <span className="text-xs text-white/60 font-light ml-1">Analyzing campus records…</span>
               </div>
             </div>
           )}
@@ -228,67 +179,54 @@ export default function AIAssistantPage() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Example questions */}
+        {/* Example Starter Prompts */}
         {showExamples && (
-          <div className="px-4 sm:px-6 pb-3">
-            <p className="text-xs font-medium text-gray-400 mb-2">
-              Try asking:
+          <div className="px-4 sm:px-6 py-3 bg-[#181818] border-t border-white/10">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-white/40 mb-2">
+              Suggested queries:
             </p>
-
             <div className="flex flex-wrap gap-2">
-              {aiExampleQuestions.map((question) => (
+              {aiExampleQuestions.map((q) => (
                 <button
-                  key={question}
+                  key={q}
                   type="button"
-                  onClick={() => sendMessage(question)}
+                  onClick={() => sendMessage(q)}
                   disabled={isTyping}
-                  className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-3.5 py-1.5 text-xs font-medium bg-white/5 text-white/80 rounded-full border border-white/10 hover:border-[#bf783e] hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
                 >
-                  {question}
+                  {q}
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Input */}
-        <div className="p-3 sm:p-4 border-t border-gray-200">
+        {/* Input Bar */}
+        <div className="p-3 sm:p-4 border-t border-white/10 bg-[#141414]">
           <form
-            onSubmit={(event) => {
-              event.preventDefault();
+            onSubmit={(e) => {
+              e.preventDefault();
               void sendMessage(input);
             }}
-            className="flex gap-2"
+            className="flex gap-2.5"
           >
             <input
               type="text"
               value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Ask about students, incidents, attendance..."
-              className="input flex-1"
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask anything about student attendance, campus incidents, departments..."
+              className="input flex-1 text-xs sm:text-sm"
               disabled={isTyping}
             />
-
             <button
               type="submit"
               disabled={!input.trim() || isTyping}
-              className="btn-primary"
+              className="btn-primary shrink-0 px-6 shadow-xs"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
-                />
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
               </svg>
-
-              Send
+              <span className="hidden sm:inline">Ask AI</span>
             </button>
           </form>
         </div>

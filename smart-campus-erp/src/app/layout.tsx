@@ -1,5 +1,18 @@
 import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Smart Campus ERP — AI-Powered Campus Safety & Management",
@@ -13,8 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html
+      lang="en"
+      className={`scroll-smooth ${inter.variable} ${playfair.variable}`}
+      data-scroll-behavior="smooth"
+    >
+      <body className={`${inter.className} antialiased bg-[#0e0e0e] text-[#f4f6d6] selection:bg-[#bf783e] selection:text-white`}>
+        {children}
+      </body>
     </html>
   );
 }

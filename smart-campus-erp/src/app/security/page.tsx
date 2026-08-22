@@ -1,138 +1,182 @@
 // ============================================================
-// Smart Campus ERP — Security Dashboard v2
+// Smart Campus ERP — Security Dashboard (Editorial Aesthetic)
 // ============================================================
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { incidents } from "@/lib/mock-data-step2";
 import type { Incident } from "@/types";
+import StatCard from "@/components/ui/StatCard";
+import Badge, { type BadgeVariant } from "@/components/ui/Badge";
+import {
+  SecurityIcon,
+  IncidentsIcon,
+  CheckIcon,
+  ChevronRightIcon,
+} from "@/components/ui/Icons";
+
+const severityVariants: Record<Incident["severity"], BadgeVariant> = {
+  low: "green",
+  medium: "amber",
+  high: "red",
+  critical: "red-strong",
+};
+
+const statusVariants: Record<Incident["status"], BadgeVariant> = {
+  Open: "blue",
+  "In Progress": "amber",
+  Resolved: "green",
+};
 
 export default function SecurityDashboardPage() {
   const [items, setItems] = useState<Incident[]>(incidents);
 
   const activeIncidents = items.filter((i) => i.status !== "Resolved");
-  const criticalCount = activeIncidents.filter((i) => i.severity === "critical" || i.severity === "high").length;
+  const criticalCount = activeIncidents.filter(
+    (i) => i.severity === "critical" || i.severity === "high"
+  ).length;
 
   const updateStatus = (id: string, status: Incident["status"]) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
   };
 
   return (
-    <div className="space-y-6">
-      <div className="page-header">
-        <h1 className="page-title">Security Dashboard</h1>
-        <p className="page-subtitle">Monitor campus safety and incident response</p>
+    <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="page-title flex items-center gap-3">
+            <span>Security Command Center</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-950 animate-pulse" />
+          </h1>
+          <p className="page-subtitle">
+            Officer Daniel Park on duty · Real-time dispatch, surveillance logs, and incident resolution.
+          </p>
+        </div>
+
+        <Link
+          href="/security/incidents"
+          className="btn-primary btn-sm self-start sm:self-auto"
+        >
+          <IncidentsIcon className="w-4 h-4" />
+          <span>Incident Operations Queue</span>
+        </Link>
       </div>
 
-      {/* Emergency banner */}
+      {/* Emergency Active Banner */}
       {criticalCount > 0 && (
-        <div className="alert-banner alert-banner-danger">
-          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0 animate-pulse">
-            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
+        <div className="alert-banner alert-banner-danger flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-rose-950/80 border border-rose-600/50 flex items-center justify-center text-rose-300 shrink-0 animate-pulse">
+              <IncidentsIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="font-bold text-sm text-rose-200">
+                ACTIVE EMERGENCY: {criticalCount} High-Priority Report(s)
+              </div>
+              <div className="text-xs text-rose-300/80 mt-0.5 font-light">
+                Immediate officer dispatch or incident assessment required on campus grounds.
+              </div>
+            </div>
           </div>
-          <div className="flex-1">
-            <div className="font-bold text-sm">EMERGENCY: High-Priority Alerts Active</div>
-            <div className="text-sm opacity-90">{criticalCount} incident(s) require immediate attention</div>
-          </div>
-          <button className="btn-danger btn-sm animate-pulse">
-            Respond Now
-          </button>
+          <Link href="/security/incidents" className="btn-danger btn-sm shrink-0">
+            Dispatch Now
+          </Link>
         </div>
       )}
 
-      {/* Stats */}
+      {/* Stats Summary Grid */}
       <div className="grid-3">
-        <div className="stat-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-900">{activeIncidents.length}</div>
-              <div className="text-xs text-gray-500 font-medium">Active Incidents</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-red-600">{criticalCount}</div>
-              <div className="text-xs text-gray-500 font-medium">High / Critical</div>
-            </div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">{items.filter((i) => i.status === "Resolved").length}</div>
-              <div className="text-xs text-gray-500 font-medium">Resolved</div>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          label="Active Incidents"
+          value={activeIncidents.length}
+          change={activeIncidents.length > 0 ? "Requires Action" : "All Clear"}
+          trend={activeIncidents.length > 0 ? "down" : "up"}
+          icon={<IncidentsIcon className="w-5 h-5 text-rose-400" />}
+          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+        />
+
+        <StatCard
+          label="High / Critical Severity"
+          value={criticalCount}
+          change={criticalCount > 0 ? "High Priority" : "Zero Critical"}
+          trend={criticalCount > 0 ? "down" : "up"}
+          icon={<SecurityIcon className="w-5 h-5 text-[#bf783e]" />}
+          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+        />
+
+        <StatCard
+          label="Resolved Today"
+          value={items.filter((i) => i.status === "Resolved").length}
+          change="Cases Closed"
+          trend="up"
+          icon={<CheckIcon className="w-5 h-5 text-emerald-400" />}
+          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
+        />
       </div>
 
-      {/* Incidents */}
-      <div className="card-flat">
-        <div className="px-5 py-4 border-b border-gray-200">
-          <h2 className="section-heading mb-0">All Incidents</h2>
+      {/* Live Incident Dispatch Queue */}
+      <div className="card-flat overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/10 bg-[#181818] flex items-center justify-between">
+          <div>
+            <h2 className="section-heading mb-0">Live Incident Stream</h2>
+            <p className="text-xs text-white/50 mt-0.5 font-light">Assigned security tickets and status dispatch</p>
+          </div>
+          <Badge variant="blue">{items.length} Records</Badge>
         </div>
-        <div className="divide-y divide-gray-100">
+
+        <div className="divide-y divide-white/5">
           {items.map((inc) => (
             <div
               key={inc.id}
-              className={`p-5 transition-colors ${
-                inc.status === "Resolved" ? "opacity-60" : "hover:bg-gray-50"
+              className={`p-6 transition-colors ${
+                inc.status === "Resolved"
+                  ? "opacity-50 hover:opacity-100 hover:bg-white/[0.02]"
+                  : "hover:bg-white/[0.03]"
               } ${
                 inc.severity === "critical" && inc.status !== "Resolved"
-                  ? "bg-red-50/50 border-l-4 border-l-red-500"
+                  ? "bg-rose-950/20 border-l-4 border-l-rose-500"
                   : ""
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-gray-900">{inc.title}</span>
-                    <span className={`badge ${
-                      inc.severity === "low" ? "badge-green" :
-                      inc.severity === "medium" ? "badge-amber" :
-                      inc.severity === "high" ? "badge-red" : "badge-red-strong"
-                    }`}>
-                      {inc.severity}
-                    </span>
-                    <span className={`badge ${
-                      inc.status === "Open" ? "badge-blue" :
-                      inc.status === "In Progress" ? "badge-amber" : "badge-green"
-                    }`}>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <span className="font-mono text-xs font-bold text-white/40">{inc.id}</span>
+                    <span className="text-sm font-bold text-[#f4f6d6]">{inc.title}</span>
+                    <Badge variant={severityVariants[inc.severity]}>
+                      {inc.severity.toUpperCase()}
+                    </Badge>
+                    <Badge variant={statusVariants[inc.status]} dot>
                       {inc.status}
-                    </span>
+                    </Badge>
                   </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    {inc.category} · {inc.location} · {inc.time}
+
+                  <div className="mt-2 flex items-center gap-3 text-xs text-white/50 flex-wrap font-light">
+                    <span>Category: <strong className="text-white/80 font-medium">{inc.category}</strong></span>
+                    <span>•</span>
+                    <span>Location: <strong className="text-white/80 font-medium">{inc.location}</strong></span>
+                    <span>•</span>
+                    <span>Logged: <strong className="text-white/80 font-medium">{inc.time}</strong></span>
                   </div>
+
+                  <p className="mt-2 text-xs text-white/70 leading-relaxed max-w-2xl font-light">
+                    {inc.description}
+                  </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
+
+                <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
                   {inc.status !== "Resolved" && (
                     <>
-                      <button
-                        onClick={() => updateStatus(inc.id, "In Progress")}
-                        className="btn-primary btn-sm"
-                      >
-                        Assign
-                      </button>
+                      {inc.status === "Open" && (
+                        <button
+                          onClick={() => updateStatus(inc.id, "In Progress")}
+                          className="btn-primary btn-sm"
+                        >
+                          Assign Unit
+                        </button>
+                      )}
                       <button
                         onClick={() => updateStatus(inc.id, "Resolved")}
                         className="btn-secondary btn-sm"
@@ -142,12 +186,25 @@ export default function SecurityDashboardPage() {
                     </>
                   )}
                   {inc.status === "Resolved" && (
-                    <span className="badge badge-green">Resolved</span>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 px-3.5 py-1 bg-emerald-950/70 rounded-full border border-emerald-700/50">
+                      <CheckIcon className="w-3.5 h-3.5" />
+                      <span>Case Closed</span>
+                    </span>
                   )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="p-4 border-t border-white/10 bg-[#181818]/60 text-center">
+          <Link
+            href="/security/incidents"
+            className="text-xs font-bold text-[#bf783e] hover:underline inline-flex items-center gap-1"
+          >
+            <span>Open Advanced Incident Operations View</span>
+            <ChevronRightIcon className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
     </div>
