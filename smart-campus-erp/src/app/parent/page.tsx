@@ -1,15 +1,12 @@
 // ============================================================
-// Smart Campus ERP — Parent Dashboard (Editorial Aesthetic)
+// Smart Campus ERP — Parent Dashboard (100% Live Supabase)
 // ============================================================
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  currentParent,
-  currentStudent,
-  studentFees,
-  studentAttendance,
-  announcements,
-  parentUpcomingEvents,
-} from "@/lib/mock-data-step2";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import StatCard from "@/components/ui/StatCard";
 import Badge from "@/components/ui/Badge";
 import {
@@ -20,19 +17,66 @@ import {
   ScheduleIcon,
   ChevronRightIcon,
 } from "@/components/ui/Icons";
+import type { Announcement } from "@/types";
 
 export default function ParentDashboardPage() {
-  const totalFees = studentFees.reduce((s, f) => s + f.total, 0);
-  const totalPaid = studentFees
-    .filter((f) => f.status === "Paid")
-    .reduce((s, f) => s + f.paid, 0);
-  const pendingFees = totalFees - totalPaid;
+  const { profile, parentData, loading } = useCurrentUser();
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [childData, setChildData] = useState<any>(null);
+
+  // Fetch announcements (campus-wide)
+  useEffect(() => {
+    async function load() {
+      const supabase = getSupabaseClient();
+      const { data } = await supabase
+        .from("announcements")
+        .select("*")
+        .order("date", { ascending: false });
+      if (data) {
+        setAnnouncements(data.map((d: any) => ({
+          id: d.id,
+          title: d.title,
+          description: d.description,
+          date: d.date,
+          read: false,
+          priority: d.priority || "medium",
+        })));
+      }
+    }
+    load();
+  }, []);
+
+  // Fetch child data if parent has a linked child
+  useEffect(() => {
+    if (!parentData?.childId) return;
+    async function load() {
+      const supabase = getSupabaseClient();
+      const { data } = await supabase
+        .from("students")
+        .select("*")
+        .eq("id", parentData!.childId)
+        .single();
+      if (data) setChildData(data);
+    }
+    load();
+  }, [parentData?.childId]);
+
+  const parentName = parentData?.name || profile?.name || "Parent";
+  const firstName = parentName.split(" ")[0];
+  const childName = parentData?.childName || "your child";
+  const childId = parentData?.childId || "—";
   const latestAnnouncement = announcements[0];
 
-  const totalClasses = studentAttendance.reduce((s, a) => s + a.total, 0);
-  const totalPresent = studentAttendance.reduce((s, a) => s + a.present, 0);
-  const attendancePct =
-    totalClasses > 0 ? Math.round((totalPresent / totalClasses) * 100) : 0;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-sm text-white/50">Loading your dashboard…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in text-[#f4f6d6]">
@@ -43,21 +87,18 @@ export default function ParentDashboardPage() {
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-white/90 text-xs font-semibold mb-3 border border-white/15">
               <span>Parent Access Verified</span>
               <span>•</span>
-              <span>Student ID: {currentStudent.id}</span>
+              <span>Student ID: {childId}</span>
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-normal tracking-tight text-[#f4f6d6]">
-              Welcome, {currentParent.name.split(" ")[0]}! 👋
+              Welcome, {firstName}! 👋
             </h1>
             <p className="mt-2 text-white/70 text-xs sm:text-sm font-light">
-              Monitoring profile & progress for <span className="font-bold text-[#bf783e]">{currentParent.childName}</span>
+              Monitoring profile & progress for <span className="font-bold text-[#bf783e]">{childName}</span>
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/student/announcements"
-              className="btn-primary btn-sm"
-            >
+            <Link href="/parent/announcements" className="btn-primary btn-sm">
               School Announcements
             </Link>
           </div>
@@ -79,78 +120,46 @@ export default function ParentDashboardPage() {
       <div className="grid-2 lg:grid-4">
         <StatCard
           label="Enrolled Program"
-          value={currentStudent.program}
-          subtitle={`Year ${currentStudent.year} • Full Time`}
+          value={childData?.program || "Not linked"}
+          subtitle={childData ? `Year ${childData.year} • Full Time` : "Link your child's account"}
           icon={<StudentsIcon className="w-5 h-5 text-[#bf783e]" />}
           iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
         />
-
         <StatCard
           label="Cumulative Attendance"
-          value={`${attendancePct}%`}
-          change={attendancePct >= 85 ? "Good Standing" : "Requires Attention"}
-          trend={attendancePct >= 85 ? "up" : "down"}
+          value={childData ? `${childData.attendancePct || 0}%` : "—"}
+          change={childData && childData.attendancePct >= 85 ? "Good Standing" : "Requires Attention"}
+          trend={childData && childData.attendancePct >= 85 ? "up" : "down"}
           icon={<AttendanceIcon className="w-5 h-5 text-emerald-400" />}
           iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
         />
-
         <StatCard
-          label="Tuition Paid"
-          value={`$${totalPaid.toLocaleString()}`}
-          change={pendingFees > 0 ? `$${pendingFees.toLocaleString()} Due` : "Cleared"}
-          trend={pendingFees > 0 ? "neutral" : "up"}
-          icon={<FeesIcon className="w-5 h-5 text-[#bf783e]" />}
+          label="Academic GPA"
+          value={childData ? `GPA ${childData.gpa || "0.0"}` : "—"}
+          change={childData && parseFloat(childData.gpa || "0") >= 3.5 ? "Dean's List Track" : "Review needed"}
+          trend={childData && parseFloat(childData.gpa || "0") >= 3.5 ? "up" : "neutral"}
+          icon={<span className="text-lg">⭐</span>}
           iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
         />
-
         <StatCard
-          label="Academic Standing"
-          value={`GPA ${currentStudent.gpa}`}
-          change="Dean's List Track"
-          trend="up"
-          icon={<span className="text-lg">⭐</span>}
+          label="Campus Alerts"
+          value={announcements.length}
+          change={announcements.length > 0 ? "New Notices" : "All clear"}
+          trend={announcements.length > 0 ? "down" : "up"}
+          icon={<FeesIcon className="w-5 h-5 text-[#bf783e]" />}
           iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
         />
       </div>
 
-      {/* Events and Bulletins Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Upcoming Events */}
-        <div className="card-flat p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="section-heading mb-0">Upcoming Academic Calendar</h2>
-              <Badge variant="blue">Calendar</Badge>
-            </div>
-
-            <div className="space-y-3">
-              {parentUpcomingEvents.map((e, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 p-4 rounded-2xl border border-white/10 bg-[#181818] hover:border-[#bf783e]/50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white/5 text-[#bf783e] border border-white/10 flex items-center justify-center shrink-0">
-                    <ScheduleIcon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold text-[#f4f6d6] truncate">{e.event}</div>
-                    <div className="text-xs text-white/50 mt-0.5 font-light">{e.date}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+      {/* Announcements */}
+      <div className="card-flat p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="section-heading mb-0">Latest School Notices</h2>
+          <Badge variant="blue">Broadcasts</Badge>
         </div>
 
-        {/* Latest School Announcements */}
-        <div className="card-flat p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="section-heading mb-0">Latest School Notices</h2>
-              <Badge variant="blue">Broadcasts</Badge>
-            </div>
-
-            {/* Featured Notice */}
+        {latestAnnouncement ? (
+          <div className="space-y-3">
             <div className="p-5 rounded-2xl bg-[#181818] border border-white/15">
               <div className="flex items-center gap-2.5 mb-2">
                 <span className="w-2 h-2 rounded-full bg-[#bf783e]" />
@@ -160,29 +169,27 @@ export default function ParentDashboardPage() {
               <p className="text-[10px] text-white/40 font-medium mt-2.5">{latestAnnouncement.date}</p>
             </div>
 
-            {/* Secondary Notices */}
-            <div className="space-y-2.5 mt-3">
-              {announcements.slice(1, 3).map((a) => (
-                <div
-                  key={a.id}
-                  className="p-3.5 rounded-xl border border-white/10 hover:border-[#bf783e]/40 transition-colors bg-[#181818]"
-                >
-                  <div className="text-xs font-bold text-[#f4f6d6]">{a.title}</div>
-                  <div className="text-[11px] text-white/40 mt-0.5 font-light">{a.date}</div>
-                </div>
-              ))}
-            </div>
+            {announcements.slice(1, 3).map((a) => (
+              <div key={a.id} className="p-3.5 rounded-xl border border-white/10 hover:border-[#bf783e]/40 transition-colors bg-[#181818]">
+                <div className="text-xs font-bold text-[#f4f6d6]">{a.title}</div>
+                <div className="text-[11px] text-white/40 mt-0.5 font-light">{a.date}</div>
+              </div>
+            ))}
           </div>
+        ) : (
+          <div className="text-center py-8 text-white/40 text-xs font-light">
+            No announcements yet. Check back later.
+          </div>
+        )}
 
-          <div className="pt-4 border-t border-white/10 mt-4">
-            <Link
-              href="/student/announcements"
-              className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#bf783e] hover:underline"
-            >
-              <span>View All Campus Bulletins</span>
-              <ChevronRightIcon className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        <div className="pt-4 border-t border-white/10 mt-4">
+          <Link
+            href="/parent/announcements"
+            className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-[#bf783e] hover:underline"
+          >
+            <span>View All Campus Bulletins</span>
+            <ChevronRightIcon className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
     </div>

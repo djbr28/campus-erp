@@ -1,5 +1,5 @@
 // ============================================================
-// Smart Campus ERP — Student Announcements (Live Supabase + Fallback)
+// Smart Campus ERP — Admin Announcements (Live Supabase + Fallback)
 // ============================================================
 "use client";
 
@@ -17,9 +17,10 @@ const priorityVariants: Record<string, { badge: BadgeVariant; border: string }> 
   low: { badge: "blue", border: "border-l-[#f4f6d6]" },
 };
 
-export default function StudentAnnouncementsPage() {
+export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadAnnouncements() {
@@ -31,7 +32,7 @@ export default function StudentAnnouncementsPage() {
           .order("date", { ascending: false });
 
         if (error) {
-          console.warn("[StudentAnnouncements] Supabase query error, using defaults:", error.message);
+          console.warn("[AdminAnnouncements] Supabase query error, using defaults:", error.message);
         } else if (data && data.length > 0) {
           const mapped: Announcement[] = data.map((d: any) => ({
             id: d.id,
@@ -44,7 +45,9 @@ export default function StudentAnnouncementsPage() {
           setItems(mapped);
         }
       } catch (err) {
-        console.warn("[StudentAnnouncements] Exception loading announcements:", err);
+        console.warn("[AdminAnnouncements] Exception loading announcements:", err);
+      } finally {
+        setIsLoading(false);
       }
     }
 

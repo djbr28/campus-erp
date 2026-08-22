@@ -7,6 +7,8 @@ import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 
 export default function SettingsPage() {
+  // Note: Settings page still uses mock display data
+  // This will be updated when settings CRUD is implemented
   const [activeTab, setActiveTab] = useState("profile");
   const [notifStates, setNotifStates] = useState<Record<string, boolean>>({
     email: true,

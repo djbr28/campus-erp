@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { allStudents as defaultStudents } from "@/lib/mock-data-step2";
+
 import { getSupabaseClient } from "@/lib/supabase/client";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
@@ -12,7 +12,7 @@ import { SearchIcon, PlusIcon, StudentsIcon } from "@/components/ui/Icons";
 import type { Student } from "@/types";
 
 export default function AdminStudentsPage() {
-  const [students, setStudents] = useState<Student[]>(defaultStudents);
+  const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "On Leave">("All");

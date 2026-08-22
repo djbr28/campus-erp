@@ -1,5 +1,5 @@
 // ============================================================
-// Smart Campus ERP — Student Announcements (Live Supabase + Fallback)
+// Smart Campus ERP — Parent Announcements (Live Supabase + Fallback)
 // ============================================================
 "use client";
 
@@ -17,7 +17,7 @@ const priorityVariants: Record<string, { badge: BadgeVariant; border: string }> 
   low: { badge: "blue", border: "border-l-[#f4f6d6]" },
 };
 
-export default function StudentAnnouncementsPage() {
+export default function ParentAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
@@ -31,7 +31,7 @@ export default function StudentAnnouncementsPage() {
           .order("date", { ascending: false });
 
         if (error) {
-          console.warn("[StudentAnnouncements] Supabase query error, using defaults:", error.message);
+          console.warn("[ParentAnnouncements] Supabase query error, using defaults:", error.message);
         } else if (data && data.length > 0) {
           const mapped: Announcement[] = data.map((d: any) => ({
             id: d.id,
@@ -44,7 +44,7 @@ export default function StudentAnnouncementsPage() {
           setItems(mapped);
         }
       } catch (err) {
-        console.warn("[StudentAnnouncements] Exception loading announcements:", err);
+        console.warn("[ParentAnnouncements] Exception loading announcements:", err);
       }
     }
 
@@ -69,7 +69,7 @@ export default function StudentAnnouncementsPage() {
         <div>
           <h1 className="page-title">Campus Announcements</h1>
           <p className="page-subtitle">
-            Official broadcasts, department notices, and campus safety bulletins.
+            Official broadcasts and notices for your child&apos;s campus.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export default function StudentAnnouncementsPage() {
                   ? "You're completely caught up!"
                   : "No announcements recorded"
               }
-              description="Check back later for university-wide alerts, exam notifications, and campus updates."
+              description="Check back later for campus-wide alerts, event notifications, and updates."
             />
           </div>
         )}

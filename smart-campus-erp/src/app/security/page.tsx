@@ -3,9 +3,10 @@
 // ============================================================
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { incidents } from "@/lib/mock-data-step2";
+
+import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Incident } from "@/types";
 import StatCard from "@/components/ui/StatCard";
 import Badge, { type BadgeVariant } from "@/components/ui/Badge";
@@ -30,15 +31,53 @@ const statusVariants: Record<Incident["status"], BadgeVariant> = {
 };
 
 export default function SecurityDashboardPage() {
-  const [items, setItems] = useState<Incident[]>(incidents);
+  const [items, setItems] = useState<Incident[]>([]);
+
+  useEffect(() => {
+    async function loadIncidents() {
+      try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from("incidents")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.warn("[SecurityDashboard] Supabase query error, using defaults:", error.message);
+        } else if (data && data.length > 0) {
+          const mapped: Incident[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            category: d.category,
+            location: d.location,
+            severity: d.severity || "medium",
+            status: d.status || "Open",
+            description: d.description,
+            time: d.created_at || "Just now",
+          }));
+          setItems(mapped);
+        }
+      } catch (err) {
+        console.warn("[SecurityDashboard] Exception loading incidents:", err);
+      }
+    }
+
+    loadIncidents();
+  }, []);
 
   const activeIncidents = items.filter((i) => i.status !== "Resolved");
   const criticalCount = activeIncidents.filter(
     (i) => i.severity === "critical" || i.severity === "high"
   ).length;
 
-  const updateStatus = (id: string, status: Incident["status"]) => {
+  const updateStatus = async (id: string, status: Incident["status"]) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
+    try {
+      const supabase = getSupabaseClient();
+      await supabase.from("incidents").update({ status }).eq("id", id);
+    } catch (err) {
+      console.warn("[SecurityDashboard] Error updating status in Supabase:", err);
+    }
   };
 
   return (
@@ -51,7 +90,7 @@ export default function SecurityDashboardPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-950 animate-pulse" />
           </h1>
           <p className="page-subtitle">
-            Officer Daniel Park on duty · Real-time dispatch, surveillance logs, and incident resolution.
+            Real-time dispatch, surveillance logs, and incident resolution.
           </p>
         </div>
 

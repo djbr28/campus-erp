@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { studentFees as defaultFees } from "@/lib/mock-data-step2";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import StatCard from "@/components/ui/StatCard";
 import Badge from "@/components/ui/Badge";
@@ -12,16 +12,19 @@ import { FeesIcon, CheckIcon } from "@/components/ui/Icons";
 import type { FeeRecord } from "@/types";
 
 export default function StudentFeesPage() {
-  const [fees, setFees] = useState<FeeRecord[]>(defaultFees);
+  const { studentData } = useCurrentUser();
+  const [fees, setFees] = useState<FeeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadFees() {
+      if (!studentData?.id) return;
       try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("fees")
           .select("*")
+          .eq("student_id", studentData!.id)
           .order("due_date", { ascending: true });
 
         if (error) {
@@ -45,7 +48,7 @@ export default function StudentFeesPage() {
     }
 
     loadFees();
-  }, []);
+  }, [studentData?.id]);
 
   const totalFees = fees.reduce((s, f) => s + f.total, 0);
   const totalPaid = fees

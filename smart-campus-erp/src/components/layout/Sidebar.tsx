@@ -9,7 +9,13 @@ import { useState } from "react";
 import { sidebarNavItems } from "@/lib/mock-data";
 import { DynamicNavIcon } from "@/components/ui/Icons";
 
-export default function Sidebar() {
+interface SidebarProps {
+  userName?: string;
+  userRole?: string;
+  userInitials?: string;
+}
+
+export default function Sidebar({ userName = "Faculty", userRole = "Faculty", userInitials = "F" }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -98,13 +104,13 @@ export default function Sidebar() {
         <div className="p-3 border-t border-white/10 shrink-0 bg-[#141414]">
           <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/10">
             <div className="w-9 h-9 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center text-xs font-extrabold shrink-0 shadow-sm">
-              SM
+              {userInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#f4f6d6] truncate">Dr. Sarah Mitchell</div>
+              <div className="text-sm font-semibold text-[#f4f6d6] truncate">{userName}</div>
               <div className="text-xs text-white/50 truncate flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#bf783e]" />
-                Faculty / Admin
+                {userRole}
               </div>
             </div>
           </div>

@@ -1,4 +1,7 @@
+"use client";
+
 import RoleDashboardLayout from "@/components/layout/RoleDashboardLayout";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const securityNav = [
   { label: "Dashboard", href: "/security", icon: "📊" },
@@ -6,15 +9,19 @@ const securityNav = [
 ];
 
 export default function SecurityLayout({ children }: { children: React.ReactNode }) {
+  const { profile, initials, loading } = useCurrentUser();
+
+  const userName = profile?.name || "Security Officer";
+
   return (
     <RoleDashboardLayout
       brandName="Smart Campus"
       brandIcon="🏫"
       homeHref="/security"
       navItems={securityNav}
-      userName="Officer Daniel Park"
+      userName={loading ? "Loading…" : userName}
       userRole="Security"
-      userInitials="DP"
+      userInitials={loading ? "…" : initials}
     >
       {children}
     </RoleDashboardLayout>

@@ -18,9 +18,9 @@ interface TopBarProps {
 }
 
 const initialNotifications = [
-  { id: "1", title: "New incident reported", message: "Broken window in Room 204", time: "2m ago", unread: true, type: "danger" },
-  { id: "2", title: "Attendance alert", message: "James Rodriguez below 75%", time: "1h ago", unread: true, type: "warning" },
-  { id: "3", title: "Fee payment received", message: "Alex Johnson — $8,500", time: "3h ago", unread: false, type: "success" },
+  { id: "1", title: "New incident reported", message: "A new campus incident has been reported", time: "2m ago", unread: true, type: "danger" },
+  { id: "2", title: "Attendance alert", message: "Student attendance below threshold", time: "1h ago", unread: true, type: "warning" },
+  { id: "3", title: "Fee payment received", message: "Payment processed successfully", time: "3h ago", unread: false, type: "success" },
 ];
 
 export default function TopBar({ title, userName, userRole, userInitials, homeHref }: TopBarProps) {
@@ -77,7 +77,9 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
           </h1>
         ) : (
           <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-white/50">
-            <span className="text-white/40">Campus</span>
+            <Link href={home} className="text-white/40 hover:text-[#bf783e] transition-colors cursor-pointer">
+              Campus
+            </Link>
             <span>/</span>
             <span className="text-[#f4f6d6] capitalize font-semibold">{role}</span>
           </div>
@@ -171,7 +173,7 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
 
               <div className="px-4 py-2.5 border-t border-white/10 text-center bg-[#181818]">
                 <Link
-                  href={`${home}/announcements`}
+                  href={role === "Student" ? "/student/announcements" : role === "Parent" ? "/parent/announcements" : home}
                   onClick={() => setNotifOpen(false)}
                   className="text-xs font-semibold text-[#bf783e] hover:underline"
                 >
@@ -182,14 +184,16 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
           )}
         </div>
 
-        {/* Quick Action Button */}
-        <Link
-          href={`${home}/report-incident`}
-          className="btn-primary btn-sm hidden sm:inline-flex"
-        >
-          <PlusIcon className="w-3.5 h-3.5" />
-          <span>Report Incident</span>
-        </Link>
+        {/* Quick Action Button — only for students & faculty */}
+        {(role === "Student" || role === "Faculty") && (
+          <Link
+            href={`${home}/report-incident`}
+            className="btn-primary btn-sm hidden sm:inline-flex"
+          >
+            <PlusIcon className="w-3.5 h-3.5" />
+            <span>Report Incident</span>
+          </Link>
+        )}
 
         {/* Profile Avatar & Dropdown */}
         <div className="relative" ref={profileRef}>

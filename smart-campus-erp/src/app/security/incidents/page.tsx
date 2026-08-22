@@ -3,8 +3,9 @@
 // ============================================================
 "use client";
 
-import { useState } from "react";
-import { incidents } from "@/lib/mock-data-step2";
+import { useState, useEffect } from "react";
+
+import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Incident } from "@/types";
 import Badge, { type BadgeVariant } from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
@@ -25,8 +26,40 @@ const statusVariants: Record<Incident["status"], BadgeVariant> = {
 };
 
 export default function SecurityIncidentsPage() {
-  const [items, setItems] = useState<Incident[]>(incidents);
+  const [items, setItems] = useState<Incident[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
+
+  useEffect(() => {
+    async function loadIncidents() {
+      try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from("incidents")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.warn("[SecurityIncidents] Supabase query error, using defaults:", error.message);
+        } else if (data && data.length > 0) {
+          const mapped: Incident[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            category: d.category,
+            location: d.location,
+            severity: d.severity || "medium",
+            status: d.status || "Open",
+            description: d.description,
+            time: d.created_at || "Just now",
+          }));
+          setItems(mapped);
+        }
+      } catch (err) {
+        console.warn("[SecurityIncidents] Exception loading incidents:", err);
+      }
+    }
+
+    loadIncidents();
+  }, []);
 
   const filtered = items.filter((i) => {
     if (filter === "active") return i.status !== "Resolved";
@@ -37,8 +70,14 @@ export default function SecurityIncidentsPage() {
   const activeCount = items.filter((i) => i.status !== "Resolved").length;
   const resolvedCount = items.filter((i) => i.status === "Resolved").length;
 
-  const updateStatus = (id: string, status: Incident["status"]) => {
+  const updateStatus = async (id: string, status: Incident["status"]) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
+    try {
+      const supabase = getSupabaseClient();
+      await supabase.from("incidents").update({ status }).eq("id", id);
+    } catch (err) {
+      console.warn("[SecurityIncidents] Error updating status in Supabase:", err);
+    }
   };
 
   return (
@@ -48,7 +87,7 @@ export default function SecurityIncidentsPage() {
         <div>
           <h1 className="page-title">Security Incident Operations</h1>
           <p className="page-subtitle">
-            Officer Daniel Park · Review incident telemetry, assign dispatched security personnel, and log resolutions.
+            Review incident telemetry, assign dispatched security personnel, and log resolutions.
           </p>
         </div>
         <Badge variant={activeCount > 0 ? "red" : "green"} dot>

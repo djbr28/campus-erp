@@ -1,10 +1,10 @@
 // ============================================================
-// Smart Campus ERP — Full-Screen Login Page (Canva Editorial)
+// Smart Campus ERP — Signup Page (Canva Editorial Aesthetic)
 //
-//   Layout: True edge-to-edge 100vh split screen
-//   Left  : Full-bleed background image with text overlay
-//   Right : Sign-in form panel
-//   Auth  : 100% Supabase Auth & Role-Based Redirection
+//   Layout: Mirror of login — full-screen split
+//   Left  : Full-bleed background image with branding overlay
+//   Right : Sign-up form panel
+//   Auth  : Supabase Auth signUp + profile + role-table insert
 // ============================================================
 "use client";
 
@@ -15,17 +15,21 @@ import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import { CampusBuildingIcon, SecurityIcon, SparklesIcon } from "@/components/ui/Icons";
 
-/** Map a profile role to the corresponding app route. */
+type AllowedRole = "STUDENT" | "PARENT" | "FACULTY";
+
+const roles: { value: AllowedRole; label: string; icon: string; desc: string }[] = [
+  { value: "STUDENT", label: "Student", icon: "🎓", desc: "Access courses, attendance & grades" },
+  { value: "PARENT", label: "Parent", icon: "👨‍👩‍👧", desc: "Monitor child's academic progress" },
+  { value: "FACULTY", label: "Faculty", icon: "👨‍🏫", desc: "Manage classes & campus reports" },
+];
+
+/** Map a role to the app route after signup. */
 function routeForRole(role: string): string | null {
   switch (role.toUpperCase()) {
     case "STUDENT":
       return "/student";
     case "PARENT":
       return "/parent";
-    case "ADMIN":
-      return "/admin";
-    case "SECURITY":
-      return "/security";
     case "FACULTY":
       return "/dashboard";
     default:
@@ -33,83 +37,168 @@ function routeForRole(role: string): string | null {
   }
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState<AllowedRole>("STUDENT");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[LOGIN] Form submitted");
     setError(null);
     setIsLoading(true);
 
     try {
       const supabase = getSupabaseClient();
-      console.log("[LOGIN] Supabase client created");
 
-      // ── Step 1: Sign in with Supabase Auth ──
-      console.log("[LOGIN] BEFORE SUPABASE LOGIN", { email });
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({ email, password });
-      console.log("[LOGIN] AUTH RESULT", {
-        userId: authData?.user?.id,
-        userEmail: authData?.user?.email,
-        authError: authError?.message ?? null,
+      // ── Step 1: Create user in Supabase Auth ──
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name, role },
+        },
       });
 
       if (authError) {
-        console.error("[LOGIN] Auth failed:", authError.message);
         setError(authError.message);
         return;
       }
 
       if (!authData.user) {
-        console.error("[LOGIN] Auth succeeded but no user returned");
-        setError("Authentication succeeded but no user was returned. Please try again.");
+        setError("Signup succeeded but no user was returned. Please try again.");
         return;
       }
 
-      // ── Step 2: Fetch the user's profile to get their role ──
-      console.log("[LOGIN] Fetching profile for user:", authData.user.id);
-      const { data: profile, error: profileError } = await supabase
+      const userId = authData.user.id;
+
+      // ── Step 2: Upsert profile into profiles table ──
+      // Uses upsert because a Supabase trigger may auto-create the profile
+      // on auth signup. Upsert handles both cases gracefully.
+      // If profile already exists with different data, we update it.
+      const { data: existingProfile } = await supabase
         .from("profiles")
-        .select("role")
-        .eq("id", authData.user.id)
+        .select("id")
+        .eq("id", userId)
         .single();
-      console.log("[LOGIN] PROFILE RESULT", {
-        role: profile?.role ?? null,
-        profileError: profileError?.message ?? null,
-      });
 
-      if (profileError || !profile) {
-        console.error("[LOGIN] No profile found:", profileError?.message);
-        setError(
-          "Your account does not have a profile. Please contact an administrator to set up your access."
-        );
-        return;
+      if (existingProfile) {
+        // Profile already exists (likely from a trigger or previous attempt)
+        // Update it with the latest data
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ role, name, email })
+          .eq("id", userId);
+
+        if (updateError) {
+          console.error("[SIGNUP] Profile update error:", updateError.message);
+          // Non-fatal: profile exists, user can still login
+        }
+      } else {
+        // Profile doesn't exist, insert it
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert([{ id: userId, role, name, email }]);
+
+        if (insertError) {
+          console.error("[SIGNUP] Profile insert error:", insertError.message);
+          setError(
+            `Account created but profile setup failed: ${insertError.message}. Please contact support.`
+          );
+          return;
+        }
       }
 
-      // ── Step 3: Redirect based on the role from the database ──
-      const route = routeForRole(profile.role);
-      console.log("[LOGIN] Role:", profile.role, "→ Route:", route);
+      // ── Step 3: Upsert into role-specific table ──
+      // Check if row already exists before inserting to avoid duplicate key errors.
+      if (role === "STUDENT") {
+        const { data: existing } = await supabase
+          .from("students")
+          .select("id")
+          .eq("id", userId)
+          .single();
 
-      if (!route) {
-        console.error("[LOGIN] Unrecognized role:", profile.role);
-        setError(
-          `Your account has an unrecognized role ("${profile.role}"). Please contact an administrator.`
-        );
-        return;
+        if (!existing) {
+          const { error: studentError } = await supabase
+            .from("students")
+            .insert([
+              {
+                id: userId,
+                name,
+                email,
+                program: "Undeclared",
+                year: 1,
+                gpa: "0.0",
+                status: "Active",
+                attendancePct: 0,
+              },
+            ]);
+
+          if (studentError) {
+            console.warn("[SIGNUP] Student insert error (non-fatal):", studentError.message);
+          }
+        }
+      } else if (role === "PARENT") {
+        const { data: existing } = await supabase
+          .from("parents")
+          .select("id")
+          .eq("id", userId)
+          .single();
+
+        if (!existing) {
+          const { error: parentError } = await supabase
+            .from("parents")
+            .insert([
+              {
+                id: userId,
+                name,
+                email,
+                childName: "",
+                childId: "",
+              },
+            ]);
+
+          if (parentError) {
+            console.warn("[SIGNUP] Parent insert error (non-fatal):", parentError.message);
+          }
+        }
+      } else if (role === "FACULTY") {
+        const { data: existing } = await supabase
+          .from("faculty")
+          .select("id")
+          .eq("id", userId)
+          .single();
+
+        if (!existing) {
+          const { error: facultyError } = await supabase
+            .from("faculty")
+            .insert([
+              {
+                id: userId,
+                name,
+                email,
+                department: "General",
+              },
+            ]);
+
+          if (facultyError) {
+            console.warn("[SIGNUP] Faculty insert error (non-fatal):", facultyError.message);
+          }
+        }
       }
 
-      console.log("[LOGIN] REDIRECTING TO", route);
-      router.refresh();
-      window.location.href = route;
+      // ── Step 4: Redirect to role dashboard ──
+      const route = routeForRole(role);
+      if (route) {
+        router.refresh();
+        window.location.href = route;
+      }
     } catch (err) {
-      console.error("[LOGIN] Unexpected error:", err);
+      console.error("[SIGNUP] Unexpected error:", err);
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred. Please try again.";
       setError(message);
@@ -123,7 +212,6 @@ export default function LoginPage() {
 
       {/* ─── LEFT: Full-Bleed Image with Text Overlay ─── */}
       <div className="relative w-full lg:w-[55%] h-[40vh] lg:h-full flex-shrink-0 overflow-hidden">
-        {/* Background Image — fills entire left half */}
         <Image
           src="/images/login-illustration.jpg"
           alt="Smart Campus Workspace"
@@ -133,7 +221,7 @@ export default function LoginPage() {
           className="object-cover"
         />
 
-        {/* Dark gradient overlay for text readability */}
+        {/* Dark gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30 lg:bg-gradient-to-r lg:from-black/30 lg:via-black/40 lg:to-black/70" />
 
         {/* Content overlaid on image */}
@@ -161,16 +249,15 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Center: Headline (visible on large screens) */}
+          {/* Center: Headline */}
           <div className="hidden lg:block max-w-lg">
             <h2 className="font-serif text-4xl xl:text-5xl font-normal text-white tracking-tight leading-[1.15] drop-shadow-xl">
-              One platform, <br />
-              <span className="italic text-[#bf783e]">every campus role</span>.
+              Join the campus.<br />
+              <span className="italic text-[#bf783e]">Start learning today</span>.
             </h2>
             <p className="mt-4 text-sm text-white/80 font-light leading-relaxed max-w-md drop-shadow-md">
-              Empowering students, parents, faculty, administrators, and security
-              officers with real-time records, automated attendance, and instant
-              emergency triage.
+              Create your Smart Campus account and get instant access to
+              attendance tracking, fee management, campus safety tools, and more.
             </p>
           </div>
 
@@ -185,20 +272,20 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* ─── RIGHT: Sign-In Panel ─── */}
+      {/* ─── RIGHT: Sign-Up Panel ─── */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10 lg:p-16 bg-[#0e0e0e] overflow-y-auto">
         <div className="w-full max-w-md space-y-7">
 
           {/* Header */}
           <div>
             <span className="text-[11px] uppercase tracking-[0.2em] text-[#bf783e] font-bold block mb-2">
-              Institutional Access
+              Create Account
             </span>
             <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#f4f6d6] tracking-tight">
-              Sign In
+              Sign Up
             </h1>
             <p className="mt-2 text-xs sm:text-sm text-white/50 font-light">
-              Enter your verified email and password to access your role-based dashboard.
+              Select your role and complete your details to get started.
             </p>
           </div>
 
@@ -214,6 +301,56 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+
+            {/* Role Selector */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-white/70 tracking-wide">
+                I am a…
+              </label>
+              <div className="grid grid-cols-3 gap-2.5">
+                {roles.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => setRole(r.value)}
+                    className={`p-3.5 rounded-2xl border text-center transition-all duration-150 ${
+                      role === r.value
+                        ? "border-[#bf783e] bg-[#bf783e]/15 shadow-sm"
+                        : "border-white/15 bg-white/5 hover:border-white/25"
+                    }`}
+                  >
+                    <span className="text-xl block mb-1">{r.icon}</span>
+                    <span
+                      className={`font-bold text-xs block ${
+                        role === r.value ? "text-[#f4f6d6]" : "text-white/70"
+                      }`}
+                    >
+                      {r.label}
+                    </span>
+                    <span className="text-[10px] text-white/40 block mt-0.5 font-light leading-tight">
+                      {r.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Full Name */}
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="block text-xs font-semibold text-white/70 tracking-wide">
+                Full Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Alex Johnson"
+                required
+                autoComplete="name"
+                className="w-full bg-transparent border-b border-white/20 px-0 py-3 text-sm text-[#f4f6d6] placeholder:text-white/25 focus:border-[#bf783e] focus:outline-hidden transition-colors"
+              />
+            </div>
 
             {/* Email */}
             <div className="space-y-1.5">
@@ -234,23 +371,19 @@ export default function LoginPage() {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-xs font-semibold text-white/70 tracking-wide">
-                  Password
-                </label>
-                <a href="#" className="text-xs text-[#bf783e] hover:underline font-medium">
-                  Forgot password?
-                </a>
-              </div>
+              <label htmlFor="password" className="block text-xs font-semibold text-white/70 tracking-wide">
+                Password
+              </label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Min. 6 characters"
                   required
-                  autoComplete="current-password"
+                  minLength={6}
+                  autoComplete="new-password"
                   className="w-full bg-transparent border-b border-white/20 px-0 py-3 pr-10 text-sm text-[#f4f6d6] placeholder:text-white/25 focus:border-[#bf783e] focus:outline-hidden transition-colors font-mono"
                 />
                 <button
@@ -271,6 +404,9 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              <p className="text-[11px] text-white/30 font-light">
+                Must be at least 6 characters long.
+              </p>
             </div>
 
             {/* Submit */}
@@ -285,11 +421,11 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  <span>Verifying Credentials…</span>
+                  <span>Creating Account…</span>
                 </span>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>Create Account</span>
                   <span>→</span>
                 </>
               )}
@@ -302,9 +438,9 @@ export default function LoginPage() {
               ← Back to Homepage
             </Link>
             <span>
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-[#bf783e] font-semibold hover:underline">
-                Create Account
+              Already have an account?{" "}
+              <Link href="/login" className="text-[#bf783e] font-semibold hover:underline">
+                Sign In
               </Link>
             </span>
           </div>

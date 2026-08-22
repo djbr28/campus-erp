@@ -1,22 +1,30 @@
+"use client";
+
 import RoleDashboardLayout from "@/components/layout/RoleDashboardLayout";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "📊" },
   { label: "Students", href: "/admin/students", icon: "🎓" },
+  { label: "Announcements", href: "/admin/announcements", icon: "📢" },
   { label: "Incidents", href: "/admin/incidents", icon: "🚨", badge: 2 },
   { label: "AI Assistant", href: "/admin/ai-assistant", icon: "🤖" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { profile, initials, loading } = useCurrentUser();
+
+  const userName = profile?.name || "Administrator";
+
   return (
     <RoleDashboardLayout
       brandName="Smart Campus"
       brandIcon="🏫"
       homeHref="/admin"
       navItems={adminNav}
-      userName="Dr. Sarah Mitchell"
+      userName={loading ? "Loading…" : userName}
       userRole="Administrator"
-      userInitials="SM"
+      userInitials={loading ? "…" : initials}
     >
       {children}
     </RoleDashboardLayout>

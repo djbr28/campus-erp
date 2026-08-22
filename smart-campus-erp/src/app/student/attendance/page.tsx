@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { currentStudent, studentAttendance as defaultAttendance } from "@/lib/mock-data-step2";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import CircularProgress from "@/components/ui/CircularProgress";
 import Badge from "@/components/ui/Badge";
@@ -13,19 +13,22 @@ import { CheckIcon, AttendanceIcon } from "@/components/ui/Icons";
 import type { AttendanceRecord } from "@/types";
 
 export default function StudentAttendancePage() {
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>(defaultAttendance);
+  const { studentData } = useCurrentUser();
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadAttendance() {
+      if (!studentData?.id) return;
       try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
           .from("attendance_records")
-          .select("*");
+          .select("*")
+          .eq("student_id", studentData!.id);
 
         if (error) {
-          console.warn("[StudentAttendance] Supabase query error, using defaults:", error.message);
+          console.warn("[StudentAttendance] Supabase query error:", error.message);
         } else if (data && data.length > 0) {
           const mapped: AttendanceRecord[] = data.map((d: any) => ({
             subject: d.subject,
@@ -45,7 +48,7 @@ export default function StudentAttendancePage() {
     }
 
     loadAttendance();
-  }, []);
+  }, [studentData?.id]);
 
   const totalClasses = attendance.reduce((s, a) => s + a.total, 0);
   const totalPresent = attendance.reduce((s, a) => s + a.present, 0);
@@ -59,7 +62,7 @@ export default function StudentAttendancePage() {
         <div>
           <h1 className="page-title">Attendance Record</h1>
           <p className="page-subtitle">
-            {currentStudent.name} · {currentStudent.program} · Year {currentStudent.year}
+            {studentData?.name || "Student"} · {studentData?.program || "Undeclared"} · Year {studentData?.year || 1}
           </p>
         </div>
         <Badge

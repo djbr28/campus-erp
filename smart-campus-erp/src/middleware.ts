@@ -95,8 +95,8 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // ── Login page: redirect to portal if already auth'd ────
-  if (pathname === "/login") {
+  // ── Login / Signup: redirect to portal if already auth'd ──
+  if (pathname === "/login" || pathname === "/signup") {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -112,7 +112,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
     }
-    console.log("[MIDDLEWARE] /login passing through (no session)");
+    console.log("[MIDDLEWARE]", pathname, "passing through (no session)");
     return supabaseResponse;
   }
 

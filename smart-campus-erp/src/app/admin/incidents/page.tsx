@@ -4,7 +4,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { incidents as defaultIncidents } from "@/lib/mock-data-step2";
+
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Incident } from "@/types";
 import Badge, { type BadgeVariant } from "@/components/ui/Badge";
@@ -26,7 +26,7 @@ const statusVariants: Record<Incident["status"], BadgeVariant> = {
 };
 
 export default function AdminIncidentsPage() {
-  const [items, setItems] = useState<Incident[]>(defaultIncidents);
+  const [items, setItems] = useState<Incident[]>([]);
   const [viewIncident, setViewIncident] = useState<Incident | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
   const [isLoading, setIsLoading] = useState(true);
