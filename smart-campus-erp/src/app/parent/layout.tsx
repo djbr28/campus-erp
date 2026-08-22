@@ -7,6 +7,7 @@ const parentNav = [
   { label: "Dashboard", href: "/parent", icon: "📊" },
   { label: "Announcements", href: "/parent/announcements", icon: "📢" },
   { label: "Incidents", href: "/parent/incidents", icon: "🚨", badge: 2 },
+  { label: "AI Assistant", href: "/parent/ai-assistant", icon: "🤖" },
 ];
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {

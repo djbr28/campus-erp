@@ -10,6 +10,7 @@ const studentNav = [
   { label: "Announcements", href: "/student/announcements", icon: "📢" },
   { label: "Incidents", href: "/student/incidents", icon: "🚨", badge: 2 },
   { label: "Report Incident", href: "/student/report-incident", icon: "📝" },
+  { label: "AI Assistant", href: "/student/ai-assistant", icon: "🤖" },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {

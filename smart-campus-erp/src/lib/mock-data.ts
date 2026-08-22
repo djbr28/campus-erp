@@ -119,5 +119,6 @@ export const sidebarNavItems = [
   { label: "Report Incident", href: "/dashboard/report-incident", icon: "📝" },
   { label: "Schedule", href: "/dashboard/schedule", icon: "📅" },
   { label: "Messages", href: "/dashboard/messages", icon: "💬", badge: 3 },
+  { label: "AI Assistant", href: "/dashboard/ai-assistant", icon: "🤖" },
   { label: "Settings", href: "/dashboard/settings", icon: "⚙️" },
 ];
