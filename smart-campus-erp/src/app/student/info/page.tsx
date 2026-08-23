@@ -28,14 +28,14 @@ export default function StudentInfoPage() {
 
       {/* Main Profile Header */}
       <ProfileCard
-        name={studentData?.name || "Alex Johnson"}
+        name={studentData?.name || "Student"}
         role="Student"
-        email={studentData?.email || "alex.johnson@campus.edu"}
-        idNumber={studentData?.register_number || "REG2024CS001"}
+        email={studentData?.email || ""}
+        idNumber={studentData?.register_number || studentData?.id || "REG2026CS001"}
         department={studentData?.department || "Computer Science"}
         program={studentData?.program || "B.Tech Computer Science"}
-        year={studentData?.year || 3}
-        semester={studentData?.semester || 5}
+        year={studentData?.year || 1}
+        semester={studentData?.semester || 1}
         phone={studentData?.phone || "+1 (555) 019-2834"}
         status={studentData?.status || "Active"}
         initials={initials}
@@ -48,7 +48,7 @@ export default function StudentInfoPage() {
           <div className="space-y-4 text-xs">
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Registration Number</span>
-              <span className="font-mono text-[#f4f6d6] font-semibold">{studentData?.register_number || "REG2024CS001"}</span>
+              <span className="font-mono text-[#f4f6d6] font-semibold">{studentData?.register_number || studentData?.id}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Degree Program</span>
@@ -60,7 +60,7 @@ export default function StudentInfoPage() {
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Current Academic Year</span>
-              <span className="text-[#bf783e] font-bold">Year {studentData?.year || 3} (Semester {studentData?.semester || 5})</span>
+              <span className="text-[#bf783e] font-bold">Year {studentData?.year || 1} (Semester {studentData?.semester || 1})</span>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-white/50">Cumulative GPA (CGPA)</span>
@@ -74,19 +74,19 @@ export default function StudentInfoPage() {
           <div className="space-y-4 text-xs">
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Campus Email</span>
-              <span className="text-[#f4f6d6] font-medium">{studentData?.email || "alex.johnson@campus.edu"}</span>
+              <span className="text-[#f4f6d6] font-medium">{studentData?.email}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Direct Phone</span>
-              <span className="text-[#f4f6d6] font-medium">{studentData?.phone || "+1 (555) 019-2834"}</span>
+              <span className="text-[#f4f6d6] font-medium">{studentData?.phone || "Not provided"}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Primary Guardian / Parent</span>
-              <span className="text-[#f4f6d6] font-medium">David Johnson</span>
+              <span className="text-[#f4f6d6] font-medium">Registered Guardian</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-white/50">Guardian Emergency Contact</span>
-              <span className="text-[#f4f6d6] font-medium">+1 (555) 234-5678</span>
+              <span className="text-white/50">Enrollment Status</span>
+              <span className="text-emerald-400 font-medium">Verified Active Student</span>
             </div>
             <div className="flex justify-between py-2">
               <span className="text-white/50">Campus Safety Clearance</span>

@@ -95,24 +95,29 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
-  // ── Login / Signup: redirect to portal if already auth'd ──
+  // ── Login / Signup: redirect to portal if already auth'd (unless explicitly switching accounts) ──
   if (pathname === "/login" || pathname === "/signup") {
-    if (user) {
+    const isSwitching = request.nextUrl.searchParams.get("switch") === "true" || request.nextUrl.searchParams.get("logout") === "true";
+
+    if (user && !isSwitching) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
-      console.log("[MIDDLEWARE] /login已有session, role:", profile?.role);
+        .maybeSingle();
 
-      if (profile?.role && roleHomeRoute[profile.role]) {
+      const userRole = profile?.role?.toUpperCase() || (user.user_metadata?.role || "STUDENT").toUpperCase();
+      console.log("[MIDDLEWARE] Active session on auth page, role:", userRole);
+
+      if (userRole && roleHomeRoute[userRole]) {
         const url = request.nextUrl.clone();
-        url.pathname = roleHomeRoute[profile.role];
-        console.log("[MIDDLEWARE] Redirecting logged-in user to", roleHomeRoute[profile.role]);
+        url.pathname = roleHomeRoute[userRole];
+        url.search = "";
+        console.log("[MIDDLEWARE] Redirecting logged-in user to", roleHomeRoute[userRole]);
         return NextResponse.redirect(url);
       }
     }
-    console.log("[MIDDLEWARE]", pathname, "passing through (no session)");
+    console.log("[MIDDLEWARE]", pathname, "passing through");
     return supabaseResponse;
   }
 

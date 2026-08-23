@@ -48,18 +48,35 @@ export default function ParentDashboardPage() {
 
   // Fetch child data if parent has a linked child
   useEffect(() => {
-    if (!parentData?.childId) return;
     async function load() {
-      const supabase = getSupabaseClient();
-      const { data } = await supabase
-        .from("students")
-        .select("*")
-        .eq("id", parentData!.childId)
-        .single();
-      if (data) setChildData(data);
+      const childIdentifier = parentData?.childId || parentData?.child_id;
+      const childName = parentData?.childName || parentData?.child_name;
+
+      if (!childIdentifier && !childName) return;
+
+      try {
+        const supabase = getSupabaseClient();
+        const { data } = await supabase
+          .from("students")
+          .select("*")
+          .or(
+            `id.eq.${childIdentifier || "none"},register_number.eq.${childIdentifier || "none"},name.ilike.%${childName || "none"}%`
+          )
+          .limit(1)
+          .maybeSingle();
+
+        if (data) {
+          setChildData({
+            ...data,
+            attendancePct: Number(data.attendance_pct || data.attendancePct || 0),
+          });
+        }
+      } catch (err) {
+        console.warn("[ParentDashboard] Error loading linked child data:", err);
+      }
     }
     load();
-  }, [parentData?.childId]);
+  }, [parentData?.childId, parentData?.child_id, parentData?.childName, parentData?.child_name]);
 
   const parentName = parentData?.name || profile?.name || "Parent";
   const firstName = parentName.split(" ")[0];

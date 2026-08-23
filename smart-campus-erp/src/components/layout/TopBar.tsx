@@ -116,13 +116,18 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
 
   const handleLogout = async () => {
     try {
+      await fetch("/api/auth/signout", { method: "POST" });
       const supabase = getSupabaseClient();
       await supabase.auth.signOut();
     } catch {
-      // Even if signOut fails, redirect cleanly
+      // Ignore
     }
-    // Hard navigate to clear all in-memory React state and Supabase client cache
-    window.location.href = "/login";
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {}
+    // Hard navigate to switch=true to allow logging in with any account
+    window.location.href = "/login?switch=true";
   };
 
   return (

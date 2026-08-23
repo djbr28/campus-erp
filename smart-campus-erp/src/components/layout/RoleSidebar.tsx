@@ -121,17 +121,37 @@ export default function RoleSidebar({
       {/* User Profile Footer */}
       {!collapsed && (
         <div className="p-3 border-t border-white/10 shrink-0 bg-[#141414]">
-          <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition-all cursor-pointer border border-transparent hover:border-white/10">
-            <div className="w-9 h-9 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center text-xs font-extrabold shrink-0 shadow-sm">
-              {userInitials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-[#f4f6d6] truncate">{userName}</div>
-              <div className="text-xs text-white/50 truncate flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#bf783e]" />
-                {userRole}
+          <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-8 h-8 rounded-full bg-[#f4f6d6] text-[#0e0e0e] flex items-center justify-center text-xs font-extrabold shrink-0 shadow-sm">
+                {userInitials}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-[#f4f6d6] truncate">{userName}</div>
+                <div className="text-[10px] text-white/50 truncate flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#bf783e]" />
+                  {userRole}
+                </div>
               </div>
             </div>
+
+            <button
+              onClick={async () => {
+                try {
+                  await fetch("/api/auth/signout", { method: "POST" });
+                  localStorage.clear();
+                  sessionStorage.clear();
+                } catch {}
+                window.location.href = "/login?switch=true";
+              }}
+              className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition-colors shrink-0"
+              title="Sign Out / Switch Account"
+              aria-label="Sign Out"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              </svg>
+            </button>
           </div>
         </div>
       )}

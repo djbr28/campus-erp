@@ -629,3 +629,219 @@ body {
   background-color: #222222;
   transform: translateY(-1px) scale(1.02);
 }
+
+/* ============================================================
+   LIGHT MODE THEME SYSTEM OVERRIDES
+   ============================================================ */
+.light,
+[data-theme='light'] {
+  --canva-cream: #141414;
+  --canva-cream-muted: #333333;
+  --canva-dark: #f8f8f2;
+  --canva-surface: #ffffff;
+  --canva-surface-elevated: #f0f0e8;
+  --canva-ochre: #bf783e;
+  --canva-ochre-dark: #a96831;
+  --canva-ochre-light: #d88e4f;
+}
+
+.light body,
+[data-theme='light'] body {
+  background-color: #f6f6f0;
+  color: #181818;
+}
+
+/* Deep container backgrounds -> Light cream / clean white */
+.light .bg-\[\#0e0e0e\],
+.light .bg-\[\#0e0e0e\]\/90,
+.light .bg-\[\#111111\],
+[data-theme='light'] .bg-\[\#0e0e0e\],
+[data-theme='light'] .bg-\[\#0e0e0e\]\/90,
+[data-theme='light'] .bg-\[\#111111\] {
+  background-color: #f7f7f2 !important;
+}
+
+.light .bg-\[\#141414\],
+.light .bg-\[\#181818\],
+.light .bg-\[\#1a1a1a\],
+[data-theme='light'] .bg-\[\#141414\],
+[data-theme='light'] .bg-\[\#181818\],
+[data-theme='light'] .bg-\[\#1a1a1a\] {
+  background-color: #ffffff !important;
+}
+
+/* Text color overrides */
+.light .text-\[\#f4f6d6\],
+[data-theme='light'] .text-\[\#f4f6d6\] {
+  color: #121212 !important;
+}
+
+.light .text-white,
+[data-theme='light'] .text-white {
+  color: #181818 !important;
+}
+
+.light .text-white\/90,
+.light .text-white\/80,
+[data-theme='light'] .text-white\/90,
+[data-theme='light'] .text-white\/80 {
+  color: #2a2a2a !important;
+}
+
+.light .text-white\/70,
+.light .text-white\/60,
+.light .text-white\/50,
+[data-theme='light'] .text-white\/70,
+[data-theme='light'] .text-white\/60,
+[data-theme='light'] .text-white\/50 {
+  color: #555555 !important;
+}
+
+.light .text-white\/40,
+.light .text-white\/30,
+.light .text-white\/25,
+.light .text-white\/20,
+[data-theme='light'] .text-white\/40,
+[data-theme='light'] .text-white\/30,
+[data-theme='light'] .text-white\/25,
+[data-theme='light'] .text-white\/20 {
+  color: #777777 !important;
+}
+
+/* Border overrides */
+.light .border-white\/10,
+.light .border-white\/15,
+.light .border-white\/20,
+.light .border-white\/5,
+.light .divide-white\/5,
+.light .divide-white\/10,
+[data-theme='light'] .border-white\/10,
+[data-theme='light'] .border-white\/15,
+[data-theme='light'] .border-white\/20,
+[data-theme='light'] .border-white\/5 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Surface tint overrides */
+.light .bg-white\/5,
+.light .bg-white\/10,
+.light .bg-white\/\[0\.02\],
+.light .bg-white\/\[0\.03\],
+.light .bg-white\/\[0\.04\],
+[data-theme='light'] .bg-white\/5,
+[data-theme='light'] .bg-white\/10,
+[data-theme='light'] .bg-white\/\[0\.02\],
+[data-theme='light'] .bg-white\/\[0\.03\],
+[data-theme='light'] .bg-white\/\[0\.04\] {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.light .hover\:bg-white\/5:hover,
+.light .hover\:bg-white\/10:hover,
+[data-theme='light'] .hover\:bg-white\/5:hover,
+[data-theme='light'] .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Cards & Containers in light mode */
+.light .card,
+.light .card-flat,
+.light .stat-card,
+.light .table-wrapper,
+[data-theme='light'] .card,
+[data-theme='light'] .card-flat,
+[data-theme='light'] .stat-card,
+[data-theme='light'] .table-wrapper {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.09) !important;
+  color: #121212 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Table in light mode */
+.light .table th,
+[data-theme='light'] .table th {
+  background-color: #f1f1ea !important;
+  color: #444444 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light .table td,
+[data-theme='light'] .table td {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+.light .table tr:hover,
+[data-theme='light'] .table tr:hover {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Inputs in light mode */
+.light .input,
+.light .textarea,
+.light .input-search,
+[data-theme='light'] .input,
+[data-theme='light'] .textarea,
+[data-theme='light'] .input-search {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #121212 !important;
+}
+
+.light .input-search,
+[data-theme='light'] .input-search {
+  background-color: #ebebe3 !important;
+}
+
+/* Primary Button in light mode */
+.light .btn-primary,
+[data-theme='light'] .btn-primary {
+  background-color: #181818 !important;
+  color: #ffffff !important;
+}
+
+.light .btn-primary:hover:not(:disabled),
+[data-theme='light'] .btn-primary:hover:not(:disabled) {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+}
+
+.light .btn-secondary,
+[data-theme='light'] .btn-secondary {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+  color: #181818 !important;
+}
+
+.light .btn-secondary:hover:not(:disabled),
+[data-theme='light'] .btn-secondary:hover:not(:disabled) {
+  background-color: #f3f3ec !important;
+  border-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Welcome banner text preservation */
+.light .welcome-banner,
+[data-theme='light'] .welcome-banner {
+  background: linear-gradient(135deg, #2b1d12 0%, #7c3f12 50%, #bf783e 100%) !important;
+  color: #ffffff !important;
+}
+
+.light .welcome-banner .text-\[\#f4f6d6\],
+.light .welcome-banner .text-white\/70,
+.light .welcome-banner .text-white\/90,
+[data-theme='light'] .welcome-banner .text-\[\#f4f6d6\],
+[data-theme='light'] .welcome-banner .text-white\/70,
+[data-theme='light'] .welcome-banner .text-white\/90 {
+  color: #ffffff !important;
+}
+
+/* Scrollbars in light mode */
+.light ::-webkit-scrollbar-thumb,
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: #cccccc;
+}
+.light ::-webkit-scrollbar-thumb:hover,
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: #aaaaaa;
+}
+
