@@ -1,7 +1,7 @@
 // ============================================================
 // Smart Campus ERP — Mock Data
 // ============================================================
-import type { User, DashboardStat, RecentActivity, Alert } from "@/types";
+import type { User, DashboardStat, RecentActivity, Alert, NavItem } from "@/types";
 
 // --- Current user (used across layouts) --------------------------------
 export const currentUser: User = {
@@ -111,14 +111,13 @@ export const alerts: Alert[] = [
 ];
 
 // --- Sidebar navigation items -----------------------------------------
-export const sidebarNavItems = [
+export const sidebarNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "📊" },
   { label: "Students", href: "/dashboard/students", icon: "🎓" },
   { label: "Attendance", href: "/dashboard/attendance", icon: "📋" },
-  { label: "Incidents", href: "/dashboard/incidents", icon: "🚨", badge: 2 },
+  { label: "Incidents", href: "/dashboard/incidents", icon: "🚨" },
   { label: "Report Incident", href: "/dashboard/report-incident", icon: "📝" },
   { label: "Schedule", href: "/dashboard/schedule", icon: "📅" },
-  { label: "Messages", href: "/dashboard/messages", icon: "💬", badge: 3 },
-  { label: "AI Assistant", href: "/dashboard/ai-assistant", icon: "🤖" },
+  { label: "Messages", href: "/dashboard/messages", icon: "💬" },
   { label: "Settings", href: "/dashboard/settings", icon: "⚙️" },
 ];

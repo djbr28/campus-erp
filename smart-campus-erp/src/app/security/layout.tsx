@@ -5,8 +5,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const securityNav = [
   { label: "Dashboard", href: "/security", icon: "📊" },
-  { label: "Incidents", href: "/security/incidents", icon: "🚨", badge: 2 },
-  { label: "AI Assistant", href: "/security/ai-assistant", icon: "🤖" },
+  { label: "Incidents", href: "/security/incidents", icon: "🚨" },
 ];
 
 export default function SecurityLayout({ children }: { children: React.ReactNode }) {

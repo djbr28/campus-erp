@@ -48,10 +48,10 @@ export default function AdminIncidentsPage() {
             title: d.title,
             category: d.category,
             location: d.location,
-            severity: d.severity || "medium",
+            severity: d.priority || d.severity || "medium",
             status: d.status || "Open",
             description: d.description,
-            time: "Just now",
+            time: d.created_at ? new Date(d.created_at).toLocaleDateString() : "Recently",
           }));
           setItems(mapped);
         }

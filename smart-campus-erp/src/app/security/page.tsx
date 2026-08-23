@@ -50,10 +50,10 @@ export default function SecurityDashboardPage() {
             title: d.title,
             category: d.category,
             location: d.location,
-            severity: d.severity || "medium",
+            severity: d.priority || d.severity || "medium",
             status: d.status || "Open",
             description: d.description,
-            time: d.created_at || "Just now",
+            time: d.created_at ? new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now",
           }));
           setItems(mapped);
         }

@@ -40,9 +40,9 @@ export default function StudentDashboardPage() {
         setFees(data.map((d: any) => ({
           id: d.id,
           label: d.label,
-          total: Number(d.total),
-          paid: Number(d.paid),
-          dueDate: d.due_date,
+          total: Number(d.total_amount ?? d.total ?? 0),
+          paid: Number(d.paid_amount ?? d.paid ?? 0),
+          dueDate: d.due_date || d.dueDate,
           status: d.status,
         })));
       }

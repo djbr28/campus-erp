@@ -7,8 +7,7 @@ const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "📊" },
   { label: "Students", href: "/admin/students", icon: "🎓" },
   { label: "Announcements", href: "/admin/announcements", icon: "📢" },
-  { label: "Incidents", href: "/admin/incidents", icon: "🚨", badge: 2 },
-  { label: "AI Assistant", href: "/admin/ai-assistant", icon: "🤖" },
+  { label: "Incidents", href: "/admin/incidents", icon: "🚨" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

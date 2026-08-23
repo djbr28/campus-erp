@@ -5,6 +5,7 @@
 // ============================================================
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
+import AIAssistantFAB from "@/components/ui/AIAssistantFAB";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function DashboardLayout({
@@ -17,7 +18,7 @@ export default function DashboardLayout({
   const userName = facultyData?.name || profile?.name || "Faculty";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0e0e0e] text-[#f4f6d6]">
+    <div className="flex h-screen overflow-hidden bg-[#0e0e0e] text-[#f4f6d6] relative">
       <Sidebar
         userName={loading ? "Loading…" : userName}
         userRole="Faculty"
@@ -34,6 +35,8 @@ export default function DashboardLayout({
           {children}
         </main>
       </div>
+
+      <AIAssistantFAB userRole="Faculty" userName={userName} />
     </div>
   );
 }

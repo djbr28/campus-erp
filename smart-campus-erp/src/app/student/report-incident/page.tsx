@@ -52,7 +52,7 @@ export default function ReportIncidentPage() {
           title: `${category} reported at ${location.slice(0, 30)}`,
           category,
           location,
-          severity,
+          priority: severity,
           status: "Open",
           description,
         },

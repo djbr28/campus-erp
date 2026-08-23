@@ -39,7 +39,9 @@ export default function AdminDashboardPage() {
       const incidents = incidentsRes.data || [];
       const activeIncidents = incidents.filter((i: any) => i.status !== "Resolved").length;
       const criticalIncidents = incidents.filter(
-        (i: any) => (i.severity === "critical" || i.severity === "high") && i.status !== "Resolved"
+        (i: any) =>
+          ((i.priority === "critical" || i.priority === "high" || i.severity === "critical" || i.severity === "high") &&
+            i.status !== "Resolved")
       ).length;
 
       setStats({

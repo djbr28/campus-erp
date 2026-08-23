@@ -18,17 +18,21 @@ interface TopBarProps {
   homeHref?: string;
 }
 
-const initialNotifications = [
-  { id: "1", title: "New incident reported", message: "A new campus incident has been reported", time: "2m ago", unread: true, type: "danger" },
-  { id: "2", title: "Attendance alert", message: "Student attendance below threshold", time: "1h ago", unread: true, type: "warning" },
-  { id: "3", title: "Fee payment received", message: "Payment processed successfully", time: "3h ago", unread: false, type: "success" },
-];
+interface NotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  time: string;
+  unread: boolean;
+  type: "danger" | "warning" | "success" | "info";
+  href?: string;
+}
 
 export default function TopBar({ title, userName, userRole, userInitials, homeHref }: TopBarProps) {
   const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const profileRef = useRef<HTMLDivElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +40,59 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
   const name = userName || "User";
   const role = userRole || "Campus Member";
   const home = homeHref || "/";
+
+  // Determine announcement destination for the current role
+  const normalizedRole = role.toLowerCase();
+  let announcementsHref = home;
+  if (normalizedRole.includes("student")) {
+    announcementsHref = "/student/announcements";
+  } else if (normalizedRole.includes("admin")) {
+    announcementsHref = "/admin/announcements";
+  } else if (normalizedRole.includes("parent")) {
+    announcementsHref = "/parent/announcements";
+  } else if (normalizedRole.includes("faculty")) {
+    announcementsHref = "/dashboard/messages";
+  } else if (normalizedRole.includes("security")) {
+    announcementsHref = "/security/incidents";
+  }
+
+  // Load announcements from Supabase
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const supabase = getSupabaseClient();
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("*")
+          .order("date", { ascending: false })
+          .limit(6);
+
+        if (!error && data && data.length > 0) {
+          const loaded: NotificationItem[] = data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            message: d.description,
+            time: d.date || "Recent",
+            unread: true,
+            type: d.priority === "high" || d.priority === "critical" ? "danger" : d.priority === "medium" ? "warning" : "info",
+            href: announcementsHref,
+          }));
+          setNotifications(loaded);
+        } else {
+          // Fallback initial notifications
+          setNotifications([
+            { id: "1", title: "Campus Safety Drill", message: "A mandatory campus safety protocol drill is scheduled for August 25.", time: "2m ago", unread: true, type: "danger", href: announcementsHref },
+            { id: "2", title: "Examination Schedule", message: "Midterm examination schedule published in the academic portal.", time: "1h ago", unread: true, type: "warning", href: announcementsHref },
+            { id: "3", title: "Extended Library Hours", message: "Starting Sep 1, central library will remain open 24/7 on weekdays.", time: "3h ago", unread: false, type: "info", href: announcementsHref },
+          ]);
+        }
+      } catch (err) {
+        console.warn("[TopBar] Error loading notifications:", err);
+      }
+    }
+
+    loadNotifications();
+  }, [announcementsHref]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -62,9 +119,10 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
       const supabase = getSupabaseClient();
       await supabase.auth.signOut();
     } catch {
-      // Even if signOut fails, redirect to login
+      // Even if signOut fails, redirect cleanly
     }
-    router.push("/login");
+    // Hard navigate to clear all in-memory React state and Supabase client cache
+    window.location.href = "/login";
   };
 
   return (
@@ -130,7 +188,7 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
             <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-[#141414] rounded-3xl shadow-2xl border border-white/15 z-50 overflow-hidden animate-fade-in text-[#f4f6d6]">
               <div className="px-4 py-3.5 border-b border-white/10 flex items-center justify-between bg-[#181818]">
                 <div className="flex items-center gap-2">
-                  <span className="font-serif text-sm font-normal text-[#f4f6d6]">Notifications</span>
+                  <span className="font-serif text-sm font-normal text-[#f4f6d6]">Campus Announcements</span>
                   {unreadCount > 0 && (
                     <span className="px-2 py-0.5 text-[10px] font-bold bg-[#bf783e] text-white rounded-full">
                       {unreadCount} new
@@ -149,9 +207,16 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
 
               <div className="max-h-72 overflow-y-auto divide-y divide-white/5">
                 {notifications.map((n) => (
-                  <div
+                  <Link
                     key={n.id}
-                    className={`px-4 py-3.5 hover:bg-white/5 transition-colors cursor-pointer ${
+                    href={n.href || announcementsHref}
+                    onClick={() => {
+                      setNotifications((prev) =>
+                        prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
+                      );
+                      setNotifOpen(false);
+                    }}
+                    className={`block px-4 py-3.5 hover:bg-white/5 transition-colors cursor-pointer ${
                       n.unread ? "bg-white/[0.03]" : ""
                     }`}
                   >
@@ -171,13 +236,13 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
                         <div className="text-[10px] text-white/40 font-medium mt-1">{n.time}</div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
               <div className="px-4 py-2.5 border-t border-white/10 text-center bg-[#181818]">
                 <Link
-                  href={role === "Student" ? "/student/announcements" : role === "Parent" ? "/parent/announcements" : home}
+                  href={announcementsHref}
                   onClick={() => setNotifOpen(false)}
                   className="text-xs font-semibold text-[#bf783e] hover:underline"
                 >
@@ -189,7 +254,7 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
         </div>
 
         {/* Quick Action Button — only for students & faculty */}
-        {(role === "Student" || role === "Faculty") && (
+        {(normalizedRole.includes("student") || normalizedRole.includes("faculty")) && (
           <Link
             href={`${home}/report-incident`}
             className="btn-primary btn-sm hidden sm:inline-flex"
