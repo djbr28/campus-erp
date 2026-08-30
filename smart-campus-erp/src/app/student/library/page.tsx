@@ -42,6 +42,8 @@ export default function StudentLibraryPage() {
 
         if (txnsRes.data && txnsRes.data.length > 0) {
           setTransactions(txnsRes.data);
+        } else if (studentData?.isNewStudent) {
+          setTransactions([]);
         } else {
           setTransactions([
             { id: "TXN-01", student_id: studentData?.id || "STU-001", book_id: "BK-001", issue_date: "2026-08-10", due_date: "2026-08-24", status: "Issued", fine_amount: 0 },
@@ -97,20 +99,26 @@ export default function StudentLibraryPage() {
       </div>
 
       {/* Borrowed Books Table */}
-      <DataTable
-        title="Active Borrowing & Loan Status"
-        subtitle="Return books before the due date to avoid automated overdue penalty fees"
-        badgeText={`${transactions.length} Books on Loan`}
-        data={transactions}
-        keyExtractor={(t) => t.id}
-        columns={[
-          { key: "book_id", header: "Book ID", render: (t) => <span className="font-mono text-xs text-[#bf783e] font-bold">{t.book_id}</span> },
-          { key: "title", header: "Book Title", render: (t) => <span className="font-bold text-[#f4f6d6] text-sm">{t.book?.title || "University Textbook"}</span> },
-          { key: "issue_date", header: "Issue Date", render: (t) => <span className="text-xs text-white/60">{t.issue_date}</span> },
-          { key: "due_date", header: "Return Due Date", render: (t) => <span className="text-xs font-semibold text-amber-300">{t.due_date}</span> },
-          { key: "status", header: "Status", render: (t) => <Badge variant={t.status === "Issued" ? "blue" : "green"} dot>{t.status}</Badge> },
-        ]}
-      />
+      {studentData?.isNewStudent ? (
+        <div className="card-flat p-8 text-center text-white/50 text-sm mb-6">
+          You haven't borrowed any books yet. Browse the campus catalog below to find required resources.
+        </div>
+      ) : (
+        <DataTable
+          title="Active Borrowing & Loan Status"
+          subtitle="Return books before the due date to avoid automated overdue penalty fees"
+          badgeText={`${transactions.length} Books on Loan`}
+          data={transactions}
+          keyExtractor={(t) => t.id}
+          columns={[
+            { key: "book_id", header: "Book ID", render: (t) => <span className="font-mono text-xs text-[#bf783e] font-bold">{t.book_id}</span> },
+            { key: "title", header: "Book Title", render: (t) => <span className="font-bold text-[#f4f6d6] text-sm">{t.book?.title || "University Textbook"}</span> },
+            { key: "issue_date", header: "Issue Date", render: (t) => <span className="text-xs text-white/60">{t.issue_date}</span> },
+            { key: "due_date", header: "Return Due Date", render: (t) => <span className="text-xs font-semibold text-amber-300">{t.due_date}</span> },
+            { key: "status", header: "Status", render: (t) => <Badge variant={t.status === "Issued" ? "blue" : "green"} dot>{t.status}</Badge> },
+          ]}
+        />
+      )}
 
       {/* Campus Catalog */}
       <DataTable

@@ -39,6 +39,14 @@ export default function StudentAttendancePage() {
             pct: d.pct ? Number(d.pct) : Math.round((Number(d.present) / Number(d.total)) * 100),
           }));
           setAttendance(mapped);
+        } else if (studentData?.isDemoAccount) {
+          setAttendance([
+            { subject: "Data Structures & Algorithms", code: "CS-301", total: 42, present: 40, absent: 2, pct: 95 },
+            { subject: "Advanced Operating Systems", code: "CS-302", total: 40, present: 36, absent: 4, pct: 90 },
+            { subject: "Database Management Systems", code: "CS-304", total: 44, present: 42, absent: 2, pct: 95 },
+            { subject: "Computer Networks & Security", code: "CS-305", total: 45, present: 38, absent: 7, pct: 84 },
+            { subject: "Discrete Mathematics & Logic", code: "MA-301", total: 38, present: 38, absent: 0, pct: 100 },
+          ]);
         }
       } catch (err) {
         console.warn("[StudentAttendance] Exception loading attendance:", err);

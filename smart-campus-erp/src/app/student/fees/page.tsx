@@ -39,6 +39,13 @@ export default function StudentFeesPage() {
             status: d.status,
           }));
           setFees(mapped);
+        } else if (studentData?.isDemoAccount) {
+          setFees([
+            { id: "FEE-001", label: "Tuition Fee — Fall Semester 2026", total: 8500, paid: 8500, status: "Paid", dueDate: "2026-08-01", payment_date: "2026-08-01" },
+            { id: "FEE-002", label: "Hostel Accommodation & Dining Fee", total: 3200, paid: 3200, status: "Paid", dueDate: "2026-08-05", payment_date: "2026-08-05" },
+            { id: "FEE-003", label: "Laboratory & Research Access Fee", total: 800, paid: 800, status: "Paid", dueDate: "2026-08-15", payment_date: "2026-08-15" },
+            { id: "FEE-004", label: "Campus Student Activities & Sports", total: 400, paid: 0, status: "Pending", dueDate: "2026-09-15" },
+          ]);
         }
       } catch (err) {
         console.warn("[StudentFees] Exception loading fees:", err);
@@ -62,9 +69,9 @@ export default function StudentFeesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="page-title">Fees & Tuition Payments</h1>
+          <h1 className="page-title">Fee Invoices & Tuition Structure</h1>
           <p className="page-subtitle">
-            Review academic invoice history, upcoming due dates, and official receipts.
+            Review academic invoice history, upcoming due dates, and official fee structures.
           </p>
         </div>
         <Badge variant={totalRemaining === 0 ? "green" : "amber"} dot>

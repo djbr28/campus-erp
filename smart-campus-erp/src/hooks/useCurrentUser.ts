@@ -91,6 +91,9 @@ export function useCurrentUser(): CurrentUserResult {
             .maybeSingle();
 
           if (!cancelled) {
+            // Demo account has mock data, everyone else is considered new by default (if no DB data exists).
+            const isDemoAccount = activeEmail === "demo@demo.com" || activeEmail.includes("demo") || activeEmail.includes("vishal");
+            
             setStudentData({
               id: studentRow?.id || user.id,
               profile_id: studentRow?.profile_id || user.id,
@@ -99,13 +102,16 @@ export function useCurrentUser(): CurrentUserResult {
               email: studentRow?.email || activeEmail,
               department: studentRow?.department || activeDept,
               program: studentRow?.program || meta.program || "B.Tech Computer Science",
-              year: Number(studentRow?.year || meta.year || 1),
-              semester: Number(studentRow?.semester || meta.semester || 1),
+              year: isDemoAccount ? Number(studentRow?.year || meta.year || 3) : 1, // Demo is year 3, new is year 1
+              semester: isDemoAccount ? Number(studentRow?.semester || meta.semester || 5) : 1, // Demo is sem 5, new is sem 1
               phone: studentRow?.phone || meta.phone || "+1 (555) 019-2834",
-              gpa: studentRow?.gpa ? String(studentRow.gpa) : "3.85",
+              gpa: isDemoAccount ? (studentRow?.gpa ? String(studentRow.gpa) : "9.2") : "N/A", // Demo gets 9.2, new gets N/A
               status: studentRow?.status || "Active",
-              attendancePct: Number(studentRow?.attendance_pct || 92.5),
-              attendance_pct: Number(studentRow?.attendance_pct || 92.5),
+              attendancePct: isDemoAccount ? Number(studentRow?.attendance_pct || 92.5) : 0,
+              attendance_pct: isDemoAccount ? Number(studentRow?.attendance_pct || 92.5) : 0,
+              isNewStudent: !isDemoAccount, // If not demo, default to new student (empty states)
+              isDayScholar: !isDemoAccount, // New students default to day scholar for now
+              isDemoAccount: isDemoAccount,
             });
           }
         } else if (activeRole === "PARENT") {

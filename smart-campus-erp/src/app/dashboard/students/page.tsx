@@ -60,10 +60,6 @@ export default function FacultyStudentsPage() {
           <h1 className="page-title">Course Student Roster</h1>
           <p className="page-subtitle">Faculty class enrollment and student academic records.</p>
         </div>
-        <button className="btn-primary btn-sm self-start sm:self-auto">
-          <PlusIcon className="w-4 h-4" />
-          <span>Add Student to Course</span>
-        </button>
       </div>
 
       {/* Table Container */}
@@ -105,7 +101,7 @@ export default function FacultyStudentsPage() {
                   <td className="hidden sm:table-cell text-white/80 font-medium">{s.program}</td>
                   <td className="hidden md:table-cell">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[#bf783e]/20 text-[#f4f6d6] border border-[#bf783e]/40 font-mono">
-                      {s.gpa}
+                      {s.gpa} / 10.00
                     </span>
                   </td>
                   <td>

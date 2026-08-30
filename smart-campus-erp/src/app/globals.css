@@ -845,3 +845,8 @@ body {
   background: #aaaaaa;
 }
 
+
+option {
+  background-color: #141414 !important;
+  color: #f4f6d6 !important;
+}

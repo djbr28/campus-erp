@@ -10,6 +10,7 @@ export default function SettingsPage() {
   // Note: Settings page still uses mock display data
   // This will be updated when settings CRUD is implemented
   const [activeTab, setActiveTab] = useState("profile");
+  const [showPassword, setShowPassword] = useState(false);
   const [notifStates, setNotifStates] = useState<Record<string, boolean>>({
     email: true,
     push: true,
@@ -20,7 +21,6 @@ export default function SettingsPage() {
   const tabs = [
     { id: "profile", label: "Profile & Information" },
     { id: "notifications", label: "Notification Channels" },
-    { id: "appearance", label: "Interface Theme" },
     { id: "security", label: "Password & Security" },
   ];
 
@@ -163,35 +163,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Appearance Tab */}
-      {activeTab === "appearance" && (
-        <div className="card-flat p-6 sm:p-8 space-y-6 bg-[#141414] border border-white/10">
-          <div>
-            <h3 className="font-serif text-base font-normal text-[#f4f6d6]">Interface Theme</h3>
-            <p className="text-xs text-white/50 mt-0.5 font-light">Customize the visual theme and contrast level of the ERP dashboard.</p>
-          </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { id: "dark", label: "Editorial Dark", icon: "🌙", active: true },
-              { id: "cream", label: "Warm Oat Cream", icon: "🌾", active: false },
-              { id: "system", label: "System Sync", icon: "💻", active: false },
-            ].map((theme) => (
-              <div
-                key={theme.id}
-                className={`p-4 rounded-2xl border text-center transition-all cursor-pointer ${
-                  theme.active
-                    ? "border-[#bf783e] bg-[#bf783e]/20 text-[#f4f6d6] shadow-sm"
-                    : "border-white/10 bg-white/5 text-white/60 hover:bg-white/10"
-                }`}
-              >
-                <span className="text-2xl block mb-1">{theme.icon}</span>
-                <span className="text-xs font-bold block">{theme.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Security Tab */}
       {activeTab === "security" && (
@@ -202,23 +174,30 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 relative">
               <label htmlFor="current-pw" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1">
                 Current Password
               </label>
-              <input id="current-pw" type="password" placeholder="••••••••" className="input" />
+              <input id="current-pw" type={showPassword ? "text" : "password"} defaultValue="password123" className="input pr-10" />
+              <button 
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-7 text-white/40 hover:text-white/80 cursor-pointer text-xs"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
             <div>
               <label htmlFor="new-pw" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1">
                 New Password
               </label>
-              <input id="new-pw" type="password" placeholder="••••••••" className="input" />
+              <input id="new-pw" type={showPassword ? "text" : "password"} placeholder="••••••••" className="input" />
             </div>
             <div>
               <label htmlFor="confirm-pw" className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-1">
                 Confirm New Password
               </label>
-              <input id="confirm-pw" type="password" placeholder="••••••••" className="input" />
+              <input id="confirm-pw" type={showPassword ? "text" : "password"} placeholder="••••••••" className="input" />
             </div>
           </div>
 

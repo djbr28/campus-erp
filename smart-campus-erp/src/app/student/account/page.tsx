@@ -16,6 +16,7 @@ export default function StudentAccountPage() {
   const [phone, setPhone] = useState(studentData?.phone || "+1 (555) 019-2834");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,12 +124,24 @@ export default function StudentAccountPage() {
               <span className="text-emerald-400 font-medium">Enforced by SSO</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-white/50">FERPA & GDPR Status</span>
+              <div>
+                <span className="text-white/50 block">FERPA & GDPR Status</span>
+                <span className="text-[10px] text-white/30 font-light block max-w-[150px]">Student Data Privacy Regulations</span>
+              </div>
               <span className="text-emerald-400 font-medium">Compliant</span>
             </div>
-            <div className="flex justify-between py-2">
+            <div className="flex justify-between items-center py-2">
               <span className="text-white/50">Current Password</span>
-              <span className="text-white/40 font-mono">••••••••••••</span>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-white/80 tracking-widest">{showPassword ? "password123" : "••••••••"}</span>
+                <button
+                  type="button"
+                  className="bg-white/10 hover:bg-white/20 text-[#f4f6d6] text-[10px] font-bold px-3 py-1.5 rounded-md transition-colors cursor-pointer"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
           </div>
         </DashboardCard>

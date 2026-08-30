@@ -49,6 +49,28 @@ export default function StudentHostelPage() {
 
   if (loading) return <LoadingState message="Loading residential housing records…" />;
 
+  if (studentData?.isDayScholar) {
+    return (
+      <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="page-title">Hostel & Residential Housing</h1>
+            <p className="page-subtitle">Room allocation details and residential block info.</p>
+          </div>
+          <Badge variant="gray">Access Denied</Badge>
+        </div>
+        <div className="card-flat p-8 text-center border-rose-900/50 bg-rose-950/20">
+          <HostelIcon className="w-12 h-12 mx-auto text-rose-500 mb-4 opacity-50" />
+          <h2 className="text-lg font-bold text-rose-400 mb-2">Hostel Access Restricted</h2>
+          <p className="text-white/60 text-sm max-w-md mx-auto">
+            You cannot access hostel services because you are registered as a Day Scholar. 
+            If you need residential housing, please contact the administrative office.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

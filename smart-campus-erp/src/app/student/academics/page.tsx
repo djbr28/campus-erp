@@ -30,6 +30,8 @@ export default function StudentAcademicsPage() {
 
         if (data && data.length > 0) {
           setRecords(data);
+        } else if (studentData.isNewStudent) {
+          setRecords([]);
         } else {
           // Fallback sample data
           setRecords([
@@ -55,6 +57,7 @@ export default function StudentAcademicsPage() {
 
   const totalCredits = records.reduce((s, r) => s + (r.credits || 4), 0);
   const avgMarks = records.length > 0 ? (records.reduce((s, r) => s + Number(r.marks), 0) / records.length).toFixed(1) : "0";
+  const isNew = studentData?.isNewStudent || false;
 
   return (
     <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
@@ -65,39 +68,44 @@ export default function StudentAcademicsPage() {
             Semester transcripts, cumulative GPA performance, credits completed, and graded assessments.
           </p>
         </div>
-        <Badge variant="blue">Cumulative GPA: {studentData?.gpa || "3.85"} / 4.00</Badge>
+        <Badge variant="blue">Cumulative GPA: {isNew ? "N/A" : (studentData?.gpa || "9.2")} / 10.00</Badge>
       </div>
 
       {/* KPI Stats */}
       <div className="grid-3">
         <StatCard
           label="Cumulative Grade Point Average"
-          value={`${studentData?.gpa || "3.85"}`}
-          change="Top 5% Cohort"
-          trend="up"
+          value={isNew ? "N/A" : `${studentData?.gpa || "9.2"}`}
+          change={isNew ? "No records" : "Top 5% Cohort"}
+          trend={isNew ? "neutral" : "up"}
           icon={<AcademicCapIcon className="w-5 h-5 text-[#bf783e]" />}
         />
         <StatCard
           label="Total Credits Earned"
-          value={`${totalCredits} Units`}
-          change="On Track"
-          trend="up"
+          value={isNew ? "0 Units" : `${totalCredits} Units`}
+          change={isNew ? "Not started" : "On Track"}
+          trend={isNew ? "neutral" : "up"}
           icon={<CheckIcon className="w-5 h-5 text-emerald-400" />}
         />
         <StatCard
           label="Average Course Score"
-          value={`${avgMarks}%`}
-          change="Distinction"
-          trend="up"
+          value={isNew ? "N/A" : `${avgMarks}%`}
+          change={isNew ? "No grades yet" : "Distinction"}
+          trend={isNew ? "neutral" : "up"}
           icon={<span className="text-base font-bold text-[#bf783e]">🎯</span>}
         />
       </div>
 
       {/* Transcripts Table */}
-      <DataTable
-        title="Official Transcript & Grade Sheet"
-        subtitle="Historical subject performance by semester"
-        badgeText={`${records.length} Courses Recorded`}
+      {isNew ? (
+        <div className="card-flat p-8 text-center text-white/50 text-sm">
+          No academic records available. Your transcripts will appear here after your first semester examinations.
+        </div>
+      ) : (
+        <DataTable
+          title="Official Transcript & Grade Sheet"
+          subtitle="Historical subject performance by semester"
+          badgeText={`${records.length} Courses Recorded`}
         data={records}
         keyExtractor={(r) => r.id}
         columns={[
@@ -117,6 +125,7 @@ export default function StudentAcademicsPage() {
           { key: "cgpa", header: "Term CGPA", render: (r) => <span className="font-serif text-sm text-[#bf783e] font-semibold">{Number(r.cgpa).toFixed(2)}</span> },
         ]}
       />
+      )}
     </div>
   );
 }

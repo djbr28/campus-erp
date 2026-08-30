@@ -113,7 +113,7 @@ export const alerts: Alert[] = [
 // --- Sidebar navigation items -----------------------------------------
 export const sidebarNavItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: "📊" },
-  { label: "Students", href: "/dashboard/students", icon: "🎓" },
+  { label: "Student Roster", href: "/dashboard/students", icon: "🎓" },
   { label: "Attendance", href: "/dashboard/attendance", icon: "📋" },
   { label: "Incidents", href: "/dashboard/incidents", icon: "🚨" },
   { label: "Report Incident", href: "/dashboard/report-incident", icon: "📝" },

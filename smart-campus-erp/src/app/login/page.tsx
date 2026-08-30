@@ -315,16 +315,10 @@ export default function LoginPage() {
           </form>
 
           {/* Footer Links */}
-          <div className="pt-5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-white/40 gap-3">
+          <div className="pt-5 border-t border-white/10 flex items-center justify-center text-xs text-white/40">
             <Link href="/" className="text-[#f4f6d6] font-semibold hover:underline">
               ← Back to Homepage
             </Link>
-            <span>
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-[#bf783e] font-semibold hover:underline">
-                Create Account
-              </Link>
-            </span>
           </div>
         </div>
       </div>

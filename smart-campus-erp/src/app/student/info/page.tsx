@@ -62,10 +62,12 @@ export default function StudentInfoPage() {
               <span className="text-white/50">Current Academic Year</span>
               <span className="text-[#bf783e] font-bold">Year {studentData?.year || 1} (Semester {studentData?.semester || 1})</span>
             </div>
-            <div className="flex justify-between py-2">
-              <span className="text-white/50">Cumulative GPA (CGPA)</span>
-              <span className="font-serif text-base text-[#f4f6d6] font-normal">{studentData?.gpa || "3.85"} / 4.00</span>
-            </div>
+            {!studentData?.isNewStudent && (
+              <div className="flex justify-between py-2">
+                <span className="text-white/50">Cumulative GPA (CGPA)</span>
+                <span className="font-serif text-base text-[#f4f6d6] font-normal">{studentData?.gpa || "9.2"} / 10.00</span>
+              </div>
+            )}
           </div>
         </DashboardCard>
 

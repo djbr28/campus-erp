@@ -19,6 +19,38 @@ import {
 } from "@/components/ui/Icons";
 import type { FeeRecord, Announcement, AttendanceRecord } from "@/types";
 
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const hours = ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
+
+const scheduleData: Record<
+  string,
+  { time: string; course: string; name: string; room: string; color: string; dot: string }[]
+> = {
+  Monday: [
+    { time: "8:00 AM", course: "CS-301", name: "Data Structures", room: "Lab Room 201", color: "bg-[#bf783e]/20 border-[#bf783e]/40 text-[#f4f6d6]", dot: "bg-[#bf783e]" },
+    { time: "11:00 AM", course: "EE-201", name: "Circuits & Logic", room: "Hall B-105", color: "bg-purple-950/40 border-purple-700/40 text-purple-200", dot: "bg-purple-400" },
+    { time: "2:00 PM", course: "CS-303", name: "AI Fundamentals", room: "Room 302", color: "bg-emerald-950/40 border-emerald-700/40 text-emerald-200", dot: "bg-emerald-400" },
+  ],
+  Tuesday: [
+    { time: "9:00 AM", course: "CS-302", name: "Algorithms Analysis", room: "Lab Room 201", color: "bg-amber-950/40 border-amber-700/40 text-amber-200", dot: "bg-amber-400" },
+    { time: "1:00 PM", course: "BA-401", name: "Marketing Tech", room: "Lecture Hall 405", color: "bg-rose-950/40 border-rose-700/40 text-rose-200", dot: "bg-rose-400" },
+  ],
+  Wednesday: [
+    { time: "8:00 AM", course: "CS-301", name: "Data Structures", room: "Lab Room 201", color: "bg-[#bf783e]/20 border-[#bf783e]/40 text-[#f4f6d6]", dot: "bg-[#bf783e]" },
+    { time: "10:00 AM", course: "CS-303", name: "AI Fundamentals", room: "Room 302", color: "bg-emerald-950/40 border-emerald-700/40 text-emerald-200", dot: "bg-emerald-400" },
+    { time: "2:00 PM", course: "EE-201", name: "Circuits & Logic", room: "Hall B-105", color: "bg-purple-950/40 border-purple-700/40 text-purple-200", dot: "bg-purple-400" },
+  ],
+  Thursday: [
+    { time: "9:00 AM", course: "CS-302", name: "Algorithms Analysis", room: "Lab Room 201", color: "bg-amber-950/40 border-amber-700/40 text-amber-200", dot: "bg-amber-400" },
+    { time: "11:00 AM", course: "BA-401", name: "Marketing Tech", room: "Lecture Hall 405", color: "bg-rose-950/40 border-rose-700/40 text-rose-200", dot: "bg-rose-400" },
+  ],
+  Friday: [
+    { time: "8:00 AM", course: "CS-301", name: "Data Structures", room: "Lab Room 201", color: "bg-[#bf783e]/20 border-[#bf783e]/40 text-[#f4f6d6]", dot: "bg-[#bf783e]" },
+    { time: "10:00 AM", course: "CS-303", name: "AI Fundamentals", room: "Room 302", color: "bg-emerald-950/40 border-emerald-700/40 text-emerald-200", dot: "bg-emerald-400" },
+    { time: "1:00 PM", course: "EE-201", name: "Circuits & Logic", room: "Hall B-105", color: "bg-purple-950/40 border-purple-700/40 text-purple-200", dot: "bg-purple-400" },
+  ],
+};
+
 export default function StudentDashboardPage() {
   const { studentData, loading: userLoading, error: userError } = useCurrentUser();
 
@@ -107,6 +139,10 @@ export default function StudentDashboardPage() {
   const studentId = studentData?.id || "—";
   const gpa = studentData?.gpa || "0.0";
   const attendancePct = studentData?.attendancePct || 0;
+  const isNew = studentData?.isNewStudent || false;
+
+  const currentDayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
+  const todayClassesCount = scheduleData[currentDayName]?.length || 0;
 
   if (userLoading) {
     return (
@@ -161,9 +197,9 @@ export default function StudentDashboardPage() {
       <div className="grid-4">
         <StatCard
           label="Overall Attendance"
-          value={`${attendancePct}%`}
-          change={attendancePct >= 85 ? "Good" : "Warning"}
-          trend={attendancePct >= 85 ? "up" : "down"}
+          value={isNew ? "N/A" : `${attendancePct}%`}
+          change={isNew ? "No records" : (attendancePct >= 85 ? "Good" : "Warning")}
+          trend={isNew ? "neutral" : (attendancePct >= 85 ? "up" : "down")}
           icon={<AttendanceIcon className="w-5 h-5 text-[#bf783e]" />}
           iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
         />
@@ -177,9 +213,9 @@ export default function StudentDashboardPage() {
         />
         <StatCard
           label="Classes Today"
-          value={attendance.length > 0 ? `${attendance.length} enrolled` : "No classes"}
-          change={attendance.length > 0 ? "On Track" : "Check schedule"}
-          trend={attendance.length > 0 ? "up" : "neutral"}
+          value={isNew ? "None yet" : (todayClassesCount > 0 ? `${todayClassesCount} scheduled` : "No classes")}
+          change={isNew ? "Not started" : (todayClassesCount > 0 ? "On Track" : "Free day")}
+          trend={isNew ? "neutral" : (todayClassesCount > 0 ? "up" : "neutral")}
           icon={<ScheduleIcon className="w-5 h-5 text-[#bf783e]" />}
           iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
         />
@@ -201,49 +237,63 @@ export default function StudentDashboardPage() {
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="section-heading mb-0">Lecture Schedule</h2>
-                <p className="text-xs text-white/50 mt-0.5 font-light">Enrolled courses & attendance progress</p>
+                <p className="text-xs text-white/50 mt-0.5 font-light">Your weekly timetable and room allocations</p>
               </div>
-              <Link href="/student/attendance" className="text-xs font-bold text-[#bf783e] hover:underline">
-                Full Details →
-              </Link>
             </div>
 
-            {attendance.length === 0 ? (
+            {isNew ? (
               <div className="text-center py-8 text-white/40 text-xs font-light">
-                No attendance records yet. Your classes will appear here once enrolled.
+                No schedule available yet. Register for courses in FFCS.
               </div>
             ) : (
-              <div className="space-y-3">
-                {attendance.slice(0, 4).map((a, idx) => {
-                  const code = a.code || `SUB-${idx + 1}`;
-                  const pct = a.pct ?? Math.round((a.present / (a.total || 1)) * 100);
-                  return (
-                    <div
-                      key={code}
-                      className="flex items-center gap-4 p-4 rounded-2xl border border-white/10 hover:border-[#bf783e]/50 hover:bg-white/[0.02] transition-colors bg-[#181818]"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-white/5 text-[#f4f6d6] border border-white/10 flex items-center justify-center text-xs font-bold shrink-0 font-mono">
-                        {code.split("-")[1] || code}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-bold text-[#f4f6d6] truncate">{a.subject}</div>
-                        <div className="text-xs text-white/40 font-mono mt-0.5">{code}</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span
-                          className={`font-serif text-base font-normal ${
-                            pct >= 85 ? "text-emerald-400" : pct >= 75 ? "text-amber-400" : "text-rose-400"
-                          }`}
-                        >
-                          {pct}%
-                        </span>
-                        <div className="text-[11px] text-white/40 font-medium mt-0.5">
-                          {a.present}/{a.total} Attended
-                        </div>
-                      </div>
+              <div className="overflow-x-auto pb-2">
+                <div className="min-w-[700px] border border-white/10 rounded-xl overflow-hidden bg-[#181818]">
+                  {/* Days Header */}
+                  <div className="grid grid-cols-[80px_repeat(5,1fr)] border-b border-white/10 bg-[#141414]">
+                    <div className="p-2.5 text-[10px] font-bold text-white/40 border-r border-white/10 flex items-center justify-center">
+                      Time
                     </div>
-                  );
-                })}
+                    {days.map((d) => (
+                      <div
+                        key={d}
+                        className="p-2.5 text-[10px] font-bold text-[#f4f6d6] text-center border-r border-white/10 last:border-r-0 uppercase tracking-wider"
+                      >
+                        {d.slice(0, 3)}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Time Rows */}
+                  {hours.map((hour) => (
+                    <div
+                      key={hour}
+                      className="grid grid-cols-[80px_repeat(5,1fr)] border-b border-white/5 last:border-b-0 min-h-[64px]"
+                    >
+                      <div className="p-2 text-[10px] font-mono font-bold text-white/40 border-r border-white/10 flex items-start justify-center bg-[#141414]/50">
+                        {hour}
+                      </div>
+
+                      {days.map((d) => {
+                        const cls = scheduleData[d]?.find((c) => c.time === hour);
+                        return (
+                          <div key={`${d}-${hour}`} className="p-1 border-r border-white/5 last:border-r-0">
+                            {cls && (
+                              <div
+                                className={`h-full p-2 rounded-lg border transition-all duration-150 hover:scale-[1.02] ${cls.color}`}
+                              >
+                                <div className="flex items-center gap-1 font-bold text-[10px]">
+                                  <span className={`w-1 h-1 rounded-full ${cls.dot}`} />
+                                  <span>{cls.course}</span>
+                                </div>
+                                <div className="text-[9px] font-mono opacity-60 mt-1 truncate">{cls.room}</div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

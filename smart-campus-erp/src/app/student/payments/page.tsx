@@ -36,7 +36,7 @@ export default function StudentPaymentsPage() {
             dueDate: d.due_date || d.dueDate,
             payment_date: d.payment_date,
           })));
-        } else {
+        } else if (studentData?.isDemoAccount) {
           setFees([
             { id: "FEE-001", label: "Tuition Fee — Fall Semester 2026", total: 8500, paid: 8500, status: "Paid", dueDate: "2026-08-01", payment_date: "2026-08-01" },
             { id: "FEE-002", label: "Hostel Accommodation & Dining Fee", total: 3200, paid: 3200, status: "Paid", dueDate: "2026-08-05", payment_date: "2026-08-05" },

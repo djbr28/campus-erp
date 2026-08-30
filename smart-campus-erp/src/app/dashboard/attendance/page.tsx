@@ -1,11 +1,14 @@
 // ============================================================
 // Smart Campus ERP — Faculty Attendance Page (Editorial Aesthetic)
 // ============================================================
+"use client";
+
+import { useState } from "react";
 import StatCard from "@/components/ui/StatCard";
 import Badge from "@/components/ui/Badge";
 import { AttendanceIcon, CheckIcon, ScheduleIcon } from "@/components/ui/Icons";
 
-const todayClasses = [
+const initialClasses = [
   { time: "08:00 AM", course: "CS-301: Data Structures", section: "A", present: 42, total: 45, pct: 93 },
   { time: "09:30 AM", course: "CS-302: Algorithms", section: "B", present: 38, total: 40, pct: 95 },
   { time: "11:00 AM", course: "EE-201: Circuits & Systems", section: "A", present: 30, total: 35, pct: 86 },
@@ -14,6 +17,17 @@ const todayClasses = [
 ];
 
 export default function AttendancePage() {
+  const [todayClasses, setTodayClasses] = useState(initialClasses);
+
+  const handleMarkAttendance = (index: number) => {
+    const updated = [...todayClasses];
+    // Mocking an attendance marking where everyone was present
+    updated[index].present = updated[index].total;
+    updated[index].pct = 100;
+    setTodayClasses(updated);
+    alert("Register successfully saved!");
+  };
+
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
@@ -117,6 +131,7 @@ export default function AttendancePage() {
                 </div>
 
                 <button
+                  onClick={() => c.pct === 0 ? handleMarkAttendance(i) : alert("Viewing register details...")}
                   className={`btn-sm shrink-0 font-bold ${
                     c.pct === 0
                       ? "btn-primary"

@@ -65,6 +65,9 @@ export interface Student {
   attendance_pct?: number;
   attendancePct?: number;
   created_at?: string;
+  isNewStudent?: boolean;
+  isDayScholar?: boolean;
+  isDemoAccount?: boolean;
 }
 
 export interface Parent {

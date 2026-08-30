@@ -7,6 +7,7 @@ const studentNav = [
   { label: "Dashboard", href: "/student", icon: "📊" },
   { label: "My Info", href: "/student/info", icon: "👤" },
   { label: "Academics", href: "/student/academics", icon: "🎓" },
+  { label: "FFCS", href: "/student/ffcs", icon: "🗓️" },
   { label: "Courses", href: "/student/courses", icon: "📖" },
   { label: "Attendance", href: "/student/attendance", icon: "📋" },
   { label: "Fees", href: "/student/fees", icon: "💰" },
