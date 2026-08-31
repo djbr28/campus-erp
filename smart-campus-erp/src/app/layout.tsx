@@ -35,7 +35,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className={`${inter.className} antialiased bg-[var(--canva-dark)] text-[var(--canva-cream)] selection:bg-[#bf783e] selection:text-white transition-colors duration-200`}>
-        <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {children}
         </ThemeProvider>
       </body>
