@@ -10,44 +10,47 @@ import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import { SearchIcon, PlusIcon, StudentsIcon } from "@/components/ui/Icons";
 import type { Student } from "@/types";
+import AddUserModal from "@/components/admin/AddUserModal";
 
 export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "On Leave">("All");
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+
+  async function loadStudents() {
+    try {
+      setIsLoading(true);
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("students")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("[AdminStudents] Supabase query error, using defaults:", error.message);
+      } else if (data && data.length > 0) {
+        const mapped: Student[] = data.map((d: any) => ({
+          id: d.id,
+          name: d.name,
+          email: d.email,
+          program: d.program,
+          year: d.year,
+          gpa: d.gpa?.toString() || "0.0",
+          status: d.status,
+          attendancePct: d.attendance_pct || 100,
+        }));
+        setStudents(mapped);
+      }
+    } catch (err) {
+      console.warn("[AdminStudents] Exception loading students:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function loadStudents() {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("students")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.warn("[AdminStudents] Supabase query error, using defaults:", error.message);
-        } else if (data && data.length > 0) {
-          const mapped: Student[] = data.map((d: any) => ({
-            id: d.id,
-            name: d.name,
-            email: d.email,
-            program: d.program,
-            year: d.year,
-            gpa: d.gpa?.toString() || "0.0",
-            status: d.status,
-            attendancePct: d.attendance_pct || 100,
-          }));
-          setStudents(mapped);
-        }
-      } catch (err) {
-        console.warn("[AdminStudents] Exception loading students:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     loadStudents();
   }, []);
 
@@ -79,9 +82,12 @@ export default function AdminStudentsPage() {
             Manage student academic profiles, attendance standings, and registration status.
           </p>
         </div>
-        <button className="btn-primary btn-sm self-start sm:self-auto">
+        <button 
+          onClick={() => setIsAddUserModalOpen(true)}
+          className="btn-primary btn-sm self-start sm:self-auto"
+        >
           <PlusIcon className="w-4 h-4" />
-          <span>Add New Student</span>
+          <span>Add New User</span>
         </button>
       </div>
 
@@ -228,6 +234,12 @@ export default function AdminStudentsPage() {
           </table>
         </div>
       </div>
+
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onSuccess={loadStudents}
+      />
     </div>
   );
 }
