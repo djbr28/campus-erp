@@ -51,48 +51,64 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
   } else if (normalizedRole.includes("parent")) {
     announcementsHref = "/parent/announcements";
   } else if (normalizedRole.includes("faculty")) {
-    announcementsHref = "/dashboard/messages";
+    announcementsHref = "/dashboard/announcements";
   } else if (normalizedRole.includes("security")) {
-    announcementsHref = "/security/incidents";
+    announcementsHref = "/security/announcements";
   }
 
-  // Load announcements from Supabase
+  // The role this user's announcements are targeted at, for target_role filtering.
+  let targetRole: string | null = null;
+  if (normalizedRole.includes("student")) targetRole = "STUDENT";
+  else if (normalizedRole.includes("admin")) targetRole = "ADMIN";
+  else if (normalizedRole.includes("parent")) targetRole = "PARENT";
+  else if (normalizedRole.includes("faculty")) targetRole = "FACULTY";
+  else if (normalizedRole.includes("security")) targetRole = "SECURITY";
+
+  // Load announcements from Supabase — the database is the only source.
   useEffect(() => {
     async function loadNotifications() {
       try {
         const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("announcements")
-          .select("*")
-          .order("date", { ascending: false })
-          .limit(6);
+        let query = supabase.from("announcements").select("*");
 
-        if (!error && data && data.length > 0) {
-          const loaded: NotificationItem[] = data.map((d: any) => ({
+        if (targetRole) {
+          query = query.or(
+            `target_role.eq.ALL,target_role.eq.${targetRole},target_role.is.null`
+          );
+        }
+
+        const { data, error } = await query.order("date", { ascending: false }).limit(6);
+
+        if (error) {
+          console.warn("[TopBar] Error loading notifications:", error.message);
+          setNotifications([]);
+          return;
+        }
+
+        setNotifications(
+          (data || []).map((d: any) => ({
             id: d.id,
             title: d.title,
             message: d.description,
             time: d.date || "Recent",
             unread: true,
-            type: d.priority === "high" || d.priority === "critical" ? "danger" : d.priority === "medium" ? "warning" : "info",
+            type:
+              d.priority === "high" || d.priority === "critical"
+                ? "danger"
+                : d.priority === "medium"
+                ? "warning"
+                : "info",
             href: announcementsHref,
-          }));
-          setNotifications(loaded);
-        } else {
-          // Fallback initial notifications
-          setNotifications([
-            { id: "1", title: "Campus Safety Drill", message: "A mandatory campus safety protocol drill is scheduled for August 25.", time: "2m ago", unread: true, type: "danger", href: announcementsHref },
-            { id: "2", title: "Examination Schedule", message: "Midterm examination schedule published in the academic portal.", time: "1h ago", unread: true, type: "warning", href: announcementsHref },
-            { id: "3", title: "Extended Library Hours", message: "Starting Sep 1, central library will remain open 24/7 on weekdays.", time: "3h ago", unread: false, type: "info", href: announcementsHref },
-          ]);
-        }
+          }))
+        );
       } catch (err) {
         console.warn("[TopBar] Error loading notifications:", err);
+        setNotifications([]);
       }
     }
 
     loadNotifications();
-  }, [announcementsHref]);
+  }, [announcementsHref, targetRole]);
 
   // Close dropdowns on click outside
   useEffect(() => {
@@ -211,6 +227,12 @@ export default function TopBar({ title, userName, userRole, userInitials, homeHr
               </div>
 
               <div className="max-h-72 overflow-y-auto divide-y divide-white/5">
+                {notifications.length === 0 && (
+                  <div className="px-4 py-8 text-center text-xs text-white/40 font-light">
+                    No announcements yet.
+                  </div>
+                )}
+
                 {notifications.map((n) => (
                   <Link
                     key={n.id}

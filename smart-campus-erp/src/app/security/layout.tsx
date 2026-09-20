@@ -5,6 +5,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const securityNav = [
   { label: "Dashboard", href: "/security", icon: "📊" },
+  { label: "Announcements", href: "/security/announcements", icon: "📢" },
   { label: "Incidents", href: "/security/incidents", icon: "🚨" },
 ];
 

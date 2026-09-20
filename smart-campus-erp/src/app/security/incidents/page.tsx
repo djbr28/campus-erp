@@ -3,9 +3,10 @@
 // ============================================================
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
+import RoleGuard from "@/components/layout/RoleGuard";
 import type { Incident } from "@/types";
 import Badge, { type BadgeVariant } from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
@@ -25,41 +26,49 @@ const statusVariants: Record<string, BadgeVariant> = {
   Resolved: "green",
 };
 
-export default function SecurityIncidentsPage() {
+function SecurityIncidentsBoard() {
   const [items, setItems] = useState<Incident[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const loadIncidents = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setLoadError(null);
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("incidents")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw new Error(error.message);
+
+      const mapped: Incident[] = (data || []).map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        category: d.category,
+        location: d.location,
+        severity: d.priority || "medium",
+        status: d.status || "Open",
+        description: d.description,
+        resolved_at: d.resolved_at || undefined,
+        time: d.created_at ? new Date(d.created_at).toLocaleDateString() : "Just now",
+      }));
+      setItems(mapped);
+    } catch (err: any) {
+      console.error("[SecurityIncidents] Error loading incidents:", err);
+      setLoadError(err?.message || "Failed to load incidents from the database.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadIncidents() {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("incidents")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.warn("[SecurityIncidents] Supabase query error, using defaults:", error.message);
-        } else if (data && data.length > 0) {
-          const mapped: Incident[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            category: d.category,
-            location: d.location,
-            severity: d.priority || d.severity || "medium",
-            status: d.status || "Open",
-            description: d.description,
-            time: d.created_at ? new Date(d.created_at).toLocaleDateString() : "Just now",
-          }));
-          setItems(mapped);
-        }
-      } catch (err) {
-        console.warn("[SecurityIncidents] Exception loading incidents:", err);
-      }
-    }
-
     loadIncidents();
-  }, []);
+  }, [loadIncidents]);
 
   const filtered = items.filter((i) => {
     if (filter === "active") return i.status !== "Resolved";
@@ -70,13 +79,40 @@ export default function SecurityIncidentsPage() {
   const activeCount = items.filter((i) => i.status !== "Resolved").length;
   const resolvedCount = items.filter((i) => i.status === "Resolved").length;
 
+  /**
+   * Writes the new status to Supabase FIRST. Local state is only
+   * touched after the database confirms — and the list is re-fetched
+   * so every role reads the same persisted row.
+   */
   const updateStatus = async (id: string, status: Incident["status"]) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
+    setPendingId(id);
+    setActionError(null);
+
     try {
-      const supabase = getSupabaseClient();
-      await supabase.from("incidents").update({ status }).eq("id", id);
+      const res = await fetch("/api/incidents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.incident) {
+        setActionError(
+          data?.error || `Could not update ${id}. The database rejected the change.`
+        );
+        return;
+      }
+
+      await loadIncidents();
     } catch (err) {
-      console.warn("[SecurityIncidents] Error updating status in Supabase:", err);
+      setActionError(
+        err instanceof Error
+          ? `Could not reach the campus server: ${err.message}`
+          : "Could not reach the campus server."
+      );
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -94,6 +130,34 @@ export default function SecurityIncidentsPage() {
           {activeCount} Active Cases
         </Badge>
       </div>
+
+      {/* Load Error */}
+      {loadError && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button
+            onClick={loadIncidents}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Resolution Error — the database was NOT changed */}
+      {actionError && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>
+            <strong className="font-bold">Status not saved.</strong> {actionError}
+          </span>
+          <button
+            onClick={() => setActionError(null)}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* KPI Stats */}
       <div className="grid-3">
@@ -141,7 +205,16 @@ export default function SecurityIncidentsPage() {
       {/* Incidents Container */}
       <div className="card-flat overflow-hidden bg-[#141414] border border-white/10">
         <div className="divide-y divide-white/5">
-          {filtered.length === 0 && (
+          {isLoading && (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="w-9 h-9 border-3 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
+                <p className="mt-3 text-xs text-white/50">Loading incident telemetry…</p>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && filtered.length === 0 && (
             <EmptyState
               icon={<CheckIcon className="w-6 h-6 text-emerald-400" />}
               title="No security incidents in this queue"
@@ -149,7 +222,7 @@ export default function SecurityIncidentsPage() {
             />
           )}
 
-          {filtered.map((inc) => (
+          {!isLoading && filtered.map((inc) => (
             <div
               key={inc.id}
               className={`p-6 transition-colors ${
@@ -192,16 +265,18 @@ export default function SecurityIncidentsPage() {
                       {inc.status === "Open" && (
                         <button
                           onClick={() => updateStatus(inc.id, "In Progress")}
-                          className="btn-primary btn-sm"
+                          disabled={pendingId === inc.id}
+                          className="btn-primary btn-sm disabled:opacity-50"
                         >
-                          Assign Unit
+                          {pendingId === inc.id ? "Saving…" : "Assign Unit"}
                         </button>
                       )}
                       <button
                         onClick={() => updateStatus(inc.id, "Resolved")}
-                        className="btn-secondary btn-sm"
+                        disabled={pendingId === inc.id}
+                        className="btn-secondary btn-sm disabled:opacity-50"
                       >
-                        Mark Resolved
+                        {pendingId === inc.id ? "Saving…" : "Mark Resolved"}
                       </button>
                     </>
                   )}
@@ -218,5 +293,14 @@ export default function SecurityIncidentsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SecurityIncidentsPage() {
+  // Resolving incidents is a SECURITY-only capability.
+  return (
+    <RoleGuard allow={["SECURITY"]} fallbackHref="/security">
+      <SecurityIncidentsBoard />
+    </RoleGuard>
   );
 }

@@ -1,6 +1,7 @@
 import { groq } from "@ai-sdk/groq";
 import { generateObject } from "ai";
 import { z } from "zod";
+import { requireRole } from "@/lib/supabase/server";
 
 const incidentSchema = z.object({
   category: z.string(),
@@ -10,6 +11,13 @@ const incidentSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Any signed-in campus user may use incident analysis; signed-out callers get
+  // 401 before any Groq quota is spent.
+  const check = await requireRole(["STUDENT", "FACULTY", "PARENT", "ADMIN", "SECURITY"]);
+  if (!check.ok) {
+    return Response.json({ error: check.error }, { status: check.status });
+  }
+
   try {
     const body = await request.json();
 

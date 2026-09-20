@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Incident } from "@/types";
@@ -30,54 +30,45 @@ export default function AdminIncidentsPage() {
   const [viewIncident, setViewIncident] = useState<Incident | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadIncidents() {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("incidents")
-          .select("*")
-          .order("created_at", { ascending: false });
+  // Admin has read-only oversight of incidents. Resolution is a
+  // SECURITY-only capability, enforced in the API route and in RLS.
+  const loadIncidents = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const supabase = getSupabaseClient();
+      const { data, error: queryError } = await supabase
+        .from("incidents")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-        if (error) {
-          console.warn("[AdminIncidents] Supabase query error, using defaults:", error.message);
-        } else if (data && data.length > 0) {
-          const mapped: Incident[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            category: d.category,
-            location: d.location,
-            severity: d.priority || d.severity || "medium",
-            status: d.status || "Open",
-            description: d.description,
-            time: d.created_at ? new Date(d.created_at).toLocaleDateString() : "Recently",
-          }));
-          setItems(mapped);
-        }
-      } catch (err) {
-        console.warn("[AdminIncidents] Exception loading incidents:", err);
-      } finally {
-        setIsLoading(false);
-      }
+      if (queryError) throw new Error(queryError.message);
+
+      const mapped: Incident[] = (data || []).map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        category: d.category,
+        location: d.location,
+        severity: d.priority || "medium",
+        status: d.status || "Open",
+        description: d.description,
+        resolved_at: d.resolved_at || undefined,
+        time: d.created_at ? new Date(d.created_at).toLocaleDateString() : "Recently",
+      }));
+      setItems(mapped);
+    } catch (err: any) {
+      console.error("[AdminIncidents] Error loading incidents:", err);
+      setError(err?.message || "Failed to load incidents from the database.");
+    } finally {
+      setIsLoading(false);
     }
-
-    loadIncidents();
   }, []);
 
-  const updateStatus = async (id: string, status: Incident["status"]) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
-    if (viewIncident && viewIncident.id === id) {
-      setViewIncident((prev) => (prev ? { ...prev, status } : null));
-    }
-
-    try {
-      const supabase = getSupabaseClient();
-      await supabase.from("incidents").update({ status }).eq("id", id);
-    } catch (err) {
-      console.warn("[AdminIncidents] Error updating status in Supabase:", err);
-    }
-  };
+  useEffect(() => {
+    loadIncidents();
+  }, [loadIncidents]);
 
   const activeCount = items.filter((i) => i.status !== "Resolved").length;
   const criticalCount = items.filter(
@@ -97,9 +88,9 @@ export default function AdminIncidentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="page-title">Incident Management</h1>
+          <h1 className="page-title">Incident Oversight</h1>
           <p className="page-subtitle">
-            Live triage, security assignment, and resolution log for campus safety reports.
+            Read-only log of campus safety reports. Resolution is handled by Campus Security.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -108,6 +99,19 @@ export default function AdminIncidentsPage() {
           </Badge>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button
+            onClick={loadIncidents}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Stats Summary Bar */}
       <div className="grid-3">
@@ -159,7 +163,7 @@ export default function AdminIncidentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((inc) => (
+              {!isLoading && filtered.map((inc) => (
                 <tr
                   key={inc.id}
                   className={`transition-colors ${
@@ -204,21 +208,25 @@ export default function AdminIncidentsPage() {
                       >
                         Details
                       </button>
-
-                      {inc.status !== "Resolved" && (
-                        <button
-                          onClick={() => updateStatus(inc.id, "Resolved")}
-                          className="px-3 py-1 text-xs font-bold text-emerald-300 bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-700/50 rounded-full transition-colors hidden sm:inline-flex"
-                        >
-                          Resolve
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>
               ))}
 
-              {filtered.length === 0 && (
+              {isLoading && (
+                <tr>
+                  <td colSpan={8}>
+                    <div className="flex items-center justify-center py-16">
+                      <div className="text-center">
+                        <div className="w-9 h-9 border-3 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
+                        <p className="mt-3 text-xs text-white/50">Loading incident records…</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+
+              {!isLoading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={8}>
                     <EmptyState
@@ -242,22 +250,12 @@ export default function AdminIncidentsPage() {
           title={viewIncident.title}
           subtitle={`Reference ID: ${viewIncident.id}`}
           footer={
-            <>
-              <button
-                onClick={() => setViewIncident(null)}
-                className="btn-secondary btn-sm"
-              >
-                Close
-              </button>
-              {viewIncident.status !== "Resolved" && (
-                <button
-                  onClick={() => updateStatus(viewIncident.id, "Resolved")}
-                  className="btn-primary btn-sm"
-                >
-                  Mark as Resolved
-                </button>
-              )}
-            </>
+            <button
+              onClick={() => setViewIncident(null)}
+              className="btn-secondary btn-sm"
+            >
+              Close
+            </button>
           }
         >
           <div className="space-y-4 text-[#f4f6d6]">

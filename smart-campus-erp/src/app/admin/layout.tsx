@@ -5,7 +5,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const adminNav = [
   { label: "Dashboard", href: "/admin", icon: "📊" },
-  { label: "Students", href: "/admin/students", icon: "🎓" },
+  { label: "User Directory", href: "/admin/students", icon: "🎓" },
   { label: "Announcements", href: "/admin/announcements", icon: "📢" },
   { label: "Incidents", href: "/admin/incidents", icon: "🚨" },
 ];

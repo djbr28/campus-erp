@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { getSupabaseClient } from "@/lib/supabase/client";
+import RoleGuard from "@/components/layout/RoleGuard";
 import {
   SecurityIcon,
   EmergencyPhoneIcon,
@@ -28,49 +28,54 @@ const severities = [
   { value: "critical", label: "Critical", desc: "Immediate hazard", selected: "border-rose-600 bg-rose-900/80 text-rose-100 font-bold" },
 ];
 
-export default function FacultyReportIncidentPage() {
+function FacultyReportIncidentForm() {
   const [category, setCategory] = useState("Physical Safety");
   const [location, setLocation] = useState("");
   const [severity, setSeverity] = useState("medium");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [incidentId, setIncidentId] = useState(`INC-${Math.floor(Math.random() * 900 + 100)}`);
+  const [incidentId, setIncidentId] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
-    const newId = `INC-${Math.floor(Math.random() * 900 + 100)}`;
-    setIncidentId(newId);
+    setError(null);
 
     try {
-      const supabase = getSupabaseClient();
-      const { error } = await supabase.from("incidents").insert([
-        {
-          id: newId,
-          title: `${category} reported at ${location.slice(0, 30)}`,
-          category,
-          location,
-          severity,
-          status: "Open",
-          description,
-        },
-      ]);
+      // The API verifies the session and role server-side, stamps
+      // reported_by, and maps severity → the incidents.priority column.
+      const res = await fetch("/api/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, location, severity, description }),
+      });
 
-      if (error) {
-        console.warn("[FacultyReportIncident] Supabase insert error:", error.message);
+      const data = await res.json();
+
+      if (!res.ok || !data?.incident?.id) {
+        // Never show success for a report that did not reach the database.
+        setError(data?.error || "The incident could not be saved. Please try again.");
+        return;
       }
+
+      setIncidentId(data.incident.id);
+      setSubmitted(true);
     } catch (err) {
-      console.warn("[FacultyReportIncident] Exception saving to Supabase:", err);
+      setError(
+        err instanceof Error
+          ? `Could not reach the campus server: ${err.message}`
+          : "Could not reach the campus server. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
-      setSubmitted(true);
     }
   };
 
   const resetForm = () => {
     setSubmitted(false);
+    setError(null);
     setCategory("Physical Safety");
     setLocation("");
     setDescription("");
@@ -131,6 +136,17 @@ export default function FacultyReportIncidentPage() {
 
       {/* Form Card */}
       <form onSubmit={handleSubmit} className="card-flat p-6 sm:p-8 space-y-6 bg-[#141414] border border-white/10">
+        {/* Submission Error — the report was NOT saved */}
+        {error && (
+          <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 animate-fade-in">
+            <p className="font-bold">Your report was not saved.</p>
+            <p className="mt-1 leading-relaxed font-light">{error}</p>
+            <p className="mt-1.5 text-rose-300/70">
+              Your details are still filled in below — submit again to retry.
+            </p>
+          </div>
+        )}
+
         {/* Category Picker */}
         <div>
           <label className="block text-xs font-bold text-white/60 uppercase tracking-wider mb-3">
@@ -231,5 +247,15 @@ export default function FacultyReportIncidentPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function FacultyReportIncidentPage() {
+  // Reporting is a STUDENT/FACULTY capability. Middleware already keeps
+  // non-faculty out of /dashboard/*; this is the page-level check.
+  return (
+    <RoleGuard allow={["FACULTY"]} fallbackHref="/dashboard">
+      <FacultyReportIncidentForm />
+    </RoleGuard>
   );
 }

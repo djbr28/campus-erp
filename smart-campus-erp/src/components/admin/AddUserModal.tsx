@@ -78,7 +78,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
       isOpen={isOpen}
       onClose={onClose}
       title="Add New User"
-      subtitle="Create a new Student, Faculty, or Parent account."
+      subtitle="Creates a Supabase Auth account, a profile, and the role-specific record."
       maxWidth="max-w-2xl"
       footer={
         <>
@@ -120,6 +120,8 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
               <option value="STUDENT">Student</option>
               <option value="FACULTY">Faculty</option>
               <option value="PARENT">Parent</option>
+              <option value="SECURITY">Security Officer</option>
+              <option value="ADMIN">Administrator</option>
             </select>
           </div>
 
@@ -270,6 +272,30 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
                 />
               </div>
             </>
+          )}
+
+          {/* Conditional Fields: ADMIN / SECURITY —
+              these roles have no side table in the schema, so the
+              profiles row (including department) is their record. */}
+          {(formData.role === "ADMIN" || formData.role === "SECURITY") && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <label className="text-xs font-semibold text-white/70">Department / Unit</label>
+              <input
+                type="text"
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                placeholder={
+                  formData.role === "SECURITY" ? "Campus Security" : "Administration"
+                }
+                className="w-full bg-[#181818] border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#f4f6d6]/50 transition-colors"
+              />
+              <p className="text-[10px] text-white/40 mt-1">
+                {formData.role === "SECURITY" ? "Security officers" : "Administrators"} are stored
+                in Supabase Auth and the profiles table — this schema has no separate role table for
+                them.
+              </p>
+            </div>
           )}
 
           {/* Conditional Fields: PARENT */}

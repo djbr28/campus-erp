@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Incident } from "@/types";
@@ -30,40 +30,44 @@ export default function ParentIncidentsPage() {
   const [viewIncident, setViewIncident] = useState<Incident | null>(null);
   const [filter, setFilter] = useState<"all" | "active" | "resolved">("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadIncidents = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const supabase = getSupabaseClient();
+      const { data, error: queryError } = await supabase
+        .from("incidents")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (queryError) throw new Error(queryError.message);
+
+      const mapped: Incident[] = (data || []).map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        category: d.category,
+        location: d.location,
+        // The schema column is `priority`, not `severity`.
+        severity: d.priority || "medium",
+        status: d.status || "Open",
+        description: d.description,
+        resolved_at: d.resolved_at || undefined,
+        time: d.created_at ? new Date(d.created_at).toLocaleDateString() : "Just now",
+      }));
+      setItems(mapped);
+    } catch (err: any) {
+      console.error("[ParentIncidents] Error loading incidents:", err);
+      setError(err?.message || "Failed to load incidents from the database.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadIncidents() {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("incidents")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.warn("[ParentIncidents] Supabase query error, using defaults:", error.message);
-        } else if (data && data.length > 0) {
-          const mapped: Incident[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            category: d.category,
-            location: d.location,
-            severity: d.severity || "medium",
-            status: d.status || "Open",
-            description: d.description,
-            time: d.created_at || "Just now",
-          }));
-          setItems(mapped);
-        }
-      } catch (err) {
-        console.warn("[ParentIncidents] Exception loading incidents:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     loadIncidents();
-  }, []);
+  }, [loadIncidents]);
 
   const activeCount = items.filter((i) => i.status !== "Resolved").length;
   const resolvedCount = items.filter((i) => i.status === "Resolved").length;
@@ -89,6 +93,19 @@ export default function ParentIncidentsPage() {
           {activeCount} Active
         </Badge>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button
+            onClick={loadIncidents}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4">
@@ -122,7 +139,16 @@ export default function ParentIncidentsPage() {
       {/* Incidents List */}
       <div className="card-flat overflow-hidden">
         <div className="divide-y divide-white/5">
-          {filtered.length === 0 && (
+          {isLoading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="w-9 h-9 border-3 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
+                <p className="mt-3 text-xs text-white/50">Loading campus incidents…</p>
+              </div>
+            </div>
+          )}
+
+          {!isLoading && filtered.length === 0 && (
             <EmptyState
               icon={<CheckIcon className="w-6 h-6 text-emerald-400" />}
               title="No incidents in this view"
@@ -130,7 +156,7 @@ export default function ParentIncidentsPage() {
             />
           )}
 
-          {filtered.map((inc) => (
+          {!isLoading && filtered.map((inc) => (
             <div
               key={inc.id}
               className={`p-5 sm:p-6 transition-colors hover:bg-white/[0.02] cursor-pointer ${

@@ -17,6 +17,7 @@ const studentNav = [
   { label: "Hostel", href: "/student/hostel", icon: "🏛️" },
   { label: "Events", href: "/student/events", icon: "🎉" },
   { label: "Announcements", href: "/student/announcements", icon: "📢" },
+  { label: "Incidents", href: "/student/incidents", icon: "🚨" },
   { label: "Report Incident", href: "/student/report-incident", icon: "🚨" },
   { label: "My Account", href: "/student/account", icon: "⚙️" },
 ];

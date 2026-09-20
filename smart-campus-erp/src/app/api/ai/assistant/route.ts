@@ -1,7 +1,15 @@
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
+import { requireRole } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
+  // Any signed-in campus user may use the assistant; signed-out callers get 401
+  // before any Groq quota is spent.
+  const check = await requireRole(["STUDENT", "FACULTY", "PARENT", "ADMIN", "SECURITY"]);
+  if (!check.ok) {
+    return Response.json({ error: check.error }, { status: check.status });
+  }
+
   try {
     const body = await request.json();
 

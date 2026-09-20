@@ -26,11 +26,29 @@ const roleHomeRoute: Record<string, string> = {
   FACULTY: "/dashboard",
 };
 
+// Reporting an incident is a STUDENT / FACULTY capability only.
+// PARENT, ADMIN and SECURITY may view incidents but never create them.
+const INCIDENT_REPORTERS = ["STUDENT", "FACULTY"];
+
 /**
  * Check whether the pathname falls under a protected route prefix.
  * Returns the allowed roles, or null if the route is unprotected.
  */
 function getAllowedRoles(pathname: string): string[] | null {
+  // Any */report-incident route, whichever portal it lives under,
+  // is restricted to the roles allowed to file a report.
+  if (pathname.endsWith("/report-incident")) {
+    const portalRoles = portalRolesFor(pathname);
+    return portalRoles
+      ? portalRoles.filter((r) => INCIDENT_REPORTERS.includes(r))
+      : INCIDENT_REPORTERS;
+  }
+
+  return portalRolesFor(pathname);
+}
+
+/** Roles allowed anywhere under the portal this pathname belongs to. */
+function portalRolesFor(pathname: string): string[] | null {
   for (const [route, roles] of Object.entries(protectedRoutes)) {
     if (pathname === route || pathname.startsWith(route + "/")) {
       return roles;

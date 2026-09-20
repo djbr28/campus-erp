@@ -1,5 +1,5 @@
 // ============================================================
-// Smart Campus ERP — Parent Announcements (Live Supabase)
+// Smart Campus ERP — Security Announcements (Live Supabase)
 // ============================================================
 "use client";
 
@@ -17,7 +17,7 @@ const priorityVariants: Record<string, { badge: BadgeVariant; border: string }> 
   low: { badge: "blue", border: "border-l-[#f4f6d6]" },
 };
 
-export default function ParentAnnouncementsPage() {
+export default function SecurityAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [isLoading, setIsLoading] = useState(true);
@@ -29,11 +29,10 @@ export default function ParentAnnouncementsPage() {
       setError(null);
       const supabase = getSupabaseClient();
 
-      // Query announcements targeted to ALL or PARENT
       const { data, error: queryError } = await supabase
         .from("announcements")
         .select("*")
-        .or("target_role.eq.ALL,target_role.eq.PARENT,target_role.is.null")
+        .or("target_role.eq.ALL,target_role.eq.SECURITY,target_role.is.null")
         .order("date", { ascending: false });
 
       if (queryError) {
@@ -52,7 +51,7 @@ export default function ParentAnnouncementsPage() {
         setItems(mapped);
       }
     } catch (err: any) {
-      console.error("[ParentAnnouncements] Error loading announcements:", err);
+      console.error("[SecurityAnnouncements] Error loading announcements:", err);
       setError(err?.message || "Failed to load announcements from database.");
     } finally {
       setIsLoading(false);
@@ -79,9 +78,9 @@ export default function ParentAnnouncementsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="page-title">Campus Announcements</h1>
+          <h1 className="page-title">Campus Security Bulletins</h1>
           <p className="page-subtitle">
-            Official broadcasts and notices for your child&apos;s campus.
+            Safety alerts, operational directives, and campus-wide communications.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -124,7 +123,7 @@ export default function ParentAnnouncementsPage() {
                 : "text-white/60 hover:text-white"
             }`}
           >
-            {f === "all" ? "All Notices" : `Unread (${unreadCount})`}
+            {f === "all" ? "All Bulletins" : `Unread (${unreadCount})`}
           </button>
         ))}
       </div>
@@ -134,7 +133,7 @@ export default function ParentAnnouncementsPage() {
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="w-9 h-9 border-3 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
-            <p className="mt-3 text-xs text-white/50">Fetching campus broadcasts…</p>
+            <p className="mt-3 text-xs text-white/50">Fetching security bulletins…</p>
           </div>
         </div>
       ) : (
@@ -149,7 +148,7 @@ export default function ParentAnnouncementsPage() {
                     ? "You're completely caught up!"
                     : "No announcements recorded"
                 }
-                description="Check back later for campus-wide alerts, event notifications, and updates."
+                description="Check back later for security directives and emergency broadcasts."
               />
             </div>
           )}
@@ -197,7 +196,7 @@ export default function ParentAnnouncementsPage() {
                       <AnnouncementsIcon className="w-3.5 h-3.5 text-[#bf783e]" />
                       <span>{a.date}</span>
                       <span>•</span>
-                      <span>Verified Broadcast</span>
+                      <span>Security Broadcast</span>
                     </div>
                   </div>
 

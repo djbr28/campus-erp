@@ -3,7 +3,7 @@
 // ============================================================
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
@@ -32,51 +32,80 @@ const statusVariants: Record<string, BadgeVariant> = {
 
 export default function SecurityDashboardPage() {
   const [items, setItems] = useState<Incident[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const loadIncidents = useCallback(async () => {
+    try {
+      setError(null);
+      const supabase = getSupabaseClient();
+      const { data, error: queryError } = await supabase
+        .from("incidents")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (queryError) throw new Error(queryError.message);
+
+      const mapped: Incident[] = (data || []).map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        category: d.category,
+        location: d.location,
+        severity: d.priority || "medium",
+        status: d.status || "Open",
+        description: d.description,
+        resolved_at: d.resolved_at || undefined,
+        time: d.created_at
+          ? new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : "Just now",
+      }));
+      setItems(mapped);
+    } catch (err: any) {
+      console.error("[SecurityDashboard] Error loading incidents:", err);
+      setError(err?.message || "Failed to load incidents from the database.");
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadIncidents() {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("incidents")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.warn("[SecurityDashboard] Supabase query error, using defaults:", error.message);
-        } else if (data && data.length > 0) {
-          const mapped: Incident[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            category: d.category,
-            location: d.location,
-            severity: d.priority || d.severity || "medium",
-            status: d.status || "Open",
-            description: d.description,
-            time: d.created_at ? new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Just now",
-          }));
-          setItems(mapped);
-        }
-      } catch (err) {
-        console.warn("[SecurityDashboard] Exception loading incidents:", err);
-      }
-    }
-
     loadIncidents();
-  }, []);
+  }, [loadIncidents]);
 
   const activeIncidents = items.filter((i) => i.status !== "Resolved");
   const criticalCount = activeIncidents.filter(
     (i) => i.severity === "critical" || i.severity === "high"
   ).length;
 
+  /**
+   * Persists to Supabase first via the SECURITY-only API route, then
+   * re-fetches. Local state is never the source of truth.
+   */
   const updateStatus = async (id: string, status: Incident["status"]) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
+    setPendingId(id);
+    setError(null);
+
     try {
-      const supabase = getSupabaseClient();
-      await supabase.from("incidents").update({ status }).eq("id", id);
+      const res = await fetch("/api/incidents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.incident) {
+        setError(data?.error || `Could not update ${id}. The database rejected the change.`);
+        return;
+      }
+
+      await loadIncidents();
     } catch (err) {
-      console.warn("[SecurityDashboard] Error updating status in Supabase:", err);
+      setError(
+        err instanceof Error
+          ? `Could not reach the campus server: ${err.message}`
+          : "Could not reach the campus server."
+      );
+    } finally {
+      setPendingId(null);
     }
   };
 
@@ -102,6 +131,19 @@ export default function SecurityDashboardPage() {
           <span>Incident Operations Queue</span>
         </Link>
       </div>
+
+      {/* Database Error — nothing was saved / loaded */}
+      {error && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button
+            onClick={loadIncidents}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Emergency Active Banner */}
       {criticalCount > 0 && (
@@ -211,16 +253,18 @@ export default function SecurityDashboardPage() {
                       {inc.status === "Open" && (
                         <button
                           onClick={() => updateStatus(inc.id, "In Progress")}
-                          className="btn-primary btn-sm"
+                          disabled={pendingId === inc.id}
+                          className="btn-primary btn-sm disabled:opacity-50"
                         >
-                          Assign Unit
+                          {pendingId === inc.id ? "Saving…" : "Assign Unit"}
                         </button>
                       )}
                       <button
                         onClick={() => updateStatus(inc.id, "Resolved")}
-                        className="btn-secondary btn-sm"
+                        disabled={pendingId === inc.id}
+                        className="btn-secondary btn-sm disabled:opacity-50"
                       >
-                        Mark Resolved
+                        {pendingId === inc.id ? "Saving…" : "Mark Resolved"}
                       </button>
                     </>
                   )}

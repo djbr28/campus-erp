@@ -3,15 +3,17 @@
 // ============================================================
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { getSupabaseClient } from "@/lib/supabase/client";
 import type { Announcement } from "@/types";
 import Badge, { type BadgeVariant } from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
-import { CheckIcon, AnnouncementsIcon } from "@/components/ui/Icons";
+import { CheckIcon, AnnouncementsIcon, PlusIcon } from "@/components/ui/Icons";
+import CreateAnnouncementModal from "@/components/admin/CreateAnnouncementModal";
 
 const priorityVariants: Record<string, { badge: BadgeVariant; border: string }> = {
+  critical: { badge: "red", border: "border-l-rose-500" },
   high: { badge: "red", border: "border-l-rose-500" },
   medium: { badge: "amber", border: "border-l-[#bf783e]" },
   low: { badge: "blue", border: "border-l-[#f4f6d6]" },
@@ -21,38 +23,44 @@ export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const loadAnnouncements = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const supabase = getSupabaseClient();
+
+      // Admin sees every announcement regardless of its audience.
+      const { data, error: queryError } = await supabase
+        .from("announcements")
+        .select("*")
+        .order("date", { ascending: false });
+
+      if (queryError) throw new Error(queryError.message);
+
+      const mapped: Announcement[] = (data || []).map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        description: d.description,
+        date: d.date,
+        target_role: d.target_role || "ALL",
+        read: false,
+        priority: d.priority || "medium",
+      }));
+      setItems(mapped);
+    } catch (err: any) {
+      console.error("[AdminAnnouncements] Error loading announcements:", err);
+      setError(err?.message || "Failed to load announcements from the database.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function loadAnnouncements() {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from("announcements")
-          .select("*")
-          .order("date", { ascending: false });
-
-        if (error) {
-          console.warn("[AdminAnnouncements] Supabase query error, using defaults:", error.message);
-        } else if (data && data.length > 0) {
-          const mapped: Announcement[] = data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            description: d.description,
-            date: d.date,
-            read: false,
-            priority: d.priority || "medium",
-          }));
-          setItems(mapped);
-        }
-      } catch (err) {
-        console.warn("[AdminAnnouncements] Exception loading announcements:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     loadAnnouncements();
-  }, []);
+  }, [loadAnnouncements]);
 
   const markRead = (id: string) => {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, read: true } : a)));
@@ -87,8 +95,25 @@ export default function AdminAnnouncementsPage() {
               </button>
             </>
           )}
+          <button onClick={() => setIsCreateOpen(true)} className="btn-primary btn-sm">
+            <PlusIcon className="w-4 h-4" />
+            <span>New Announcement</span>
+          </button>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button
+            onClick={loadAnnouncements}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Filter Tabs */}
       <div className="flex gap-1.5 p-1 bg-white/5 border border-white/10 rounded-full w-fit">
@@ -107,8 +132,18 @@ export default function AdminAnnouncementsPage() {
         ))}
       </div>
 
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="w-9 h-9 border-3 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
+            <p className="mt-3 text-xs text-white/50">Fetching campus broadcasts…</p>
+          </div>
+        </div>
+      )}
+
       {/* Announcements Stream */}
-      <div className="space-y-3.5">
+      <div className={`space-y-3.5 ${isLoading ? "hidden" : ""}`}>
         {filtered.length === 0 && (
           <div className="card-flat">
             <EmptyState
@@ -166,7 +201,12 @@ export default function AdminAnnouncementsPage() {
                     <AnnouncementsIcon className="w-3.5 h-3.5 text-[#bf783e]" />
                     <span>{a.date}</span>
                     <span>•</span>
-                    <span>Verified Broadcast</span>
+                    <span>
+                      Audience:{" "}
+                      <strong className="text-white/70 font-semibold">
+                        {a.target_role || "ALL"}
+                      </strong>
+                    </span>
                   </div>
                 </div>
 
@@ -190,6 +230,12 @@ export default function AdminAnnouncementsPage() {
           );
         })}
       </div>
+
+      <CreateAnnouncementModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={loadAnnouncements}
+      />
     </div>
   );
 }
