@@ -70,7 +70,9 @@ export default function StudentAttendancePage() {
         <div>
           <h1 className="page-title">Attendance Record</h1>
           <p className="page-subtitle">
-            {studentData?.name || "Student"} · {studentData?.program || "Undeclared"} · Year {studentData?.year || 1}
+            {studentData?.name || "Student"} · {studentData?.program || "Undeclared"} ·{" "}
+            {studentData?.year != null ? `Year ${studentData.year}` : "Year not recorded"}
+            {studentData?.semester != null ? ` · Semester ${studentData.semester}` : ""}
           </p>
         </div>
         <Badge

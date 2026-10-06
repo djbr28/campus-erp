@@ -25,31 +25,25 @@ export default function StudentExaminationPage() {
         const supabase = getSupabaseClient();
         const [examsRes, resultsRes] = await Promise.all([
           supabase.from("exams").select("*").order("exam_date", { ascending: true }),
-          supabase.from("exam_results").select("*, exam:exams(*)"),
+          // Scoped to this student — this previously returned every
+          // student's results. RLS enforces the same boundary server-side.
+          supabase
+            .from("exam_results")
+            .select("*, exam:exams(*)")
+            .eq("student_id", studentData?.id ?? ""),
         ]);
 
         if (examsRes.data && examsRes.data.length > 0) {
           setExams(examsRes.data);
-        } else if (studentData?.isNewStudent) {
-          setExams([]);
         } else {
-          setExams([
-            { id: "EXAM-001", subject: "Data Structures & Algorithms Final", exam_date: "2026-10-10 09:00:00+00", room: "Hall A (Seat 42)", duration: "3 Hours", total_marks: 100 },
-            { id: "EXAM-002", subject: "Advanced Operating Systems Midterm", exam_date: "2026-10-12 14:00:00+00", room: "Hall B (Seat 18)", duration: "2 Hours", total_marks: 50 },
-            { id: "EXAM-003", subject: "Database Management Systems Practical", exam_date: "2026-10-15 10:00:00+00", room: "CS Lab 3 (Workstation 12)", duration: "3 Hours", total_marks: 100 },
-            { id: "EXAM-004", subject: "Computer Networks Theory", exam_date: "2026-10-18 09:00:00+00", room: "Hall 201 (Seat 09)", duration: "3 Hours", total_marks: 100 },
-          ]);
+          setExams([]);
         }
 
         if (resultsRes.data && resultsRes.data.length > 0) {
           setResults(resultsRes.data);
-        } else if (studentData?.isNewStudent) {
-          setResults([]);
         } else {
-          setResults([
-            { id: "1", student_id: studentData?.id || "STU-001", exam_id: "EXAM-001", marks: 94.0, grade: "A+", remarks: "Outstanding performance in algorithmic problem solving" },
-            { id: "2", student_id: studentData?.id || "STU-001", exam_id: "EXAM-002", marks: 46.5, grade: "A+", remarks: "Clean kernel simulation analysis" },
-          ]);
+          // Never invent grades for a real account.
+          setResults([]);
         }
       } catch (err) {
         console.warn("[StudentExamination] Error loading exam data:", err);
@@ -63,7 +57,7 @@ export default function StudentExaminationPage() {
 
   if (loading) return <LoadingState message="Loading examination schedules & results…" />;
 
-  const isNew = studentData?.isNewStudent || false;
+  const isNew = exams.length === 0 && results.length === 0;
 
   return (
     <div className="space-y-6 animate-fade-in text-[#f4f6d6]">

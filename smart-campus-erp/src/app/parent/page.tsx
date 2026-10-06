@@ -1,90 +1,83 @@
 // ============================================================
 // Smart Campus ERP — Parent Dashboard (100% Live Supabase)
+//
+// The connected student is resolved server-side from the signed-in
+// parent's own `parents` row (see /api/parent/child). This page never
+// names a student id, so there is nothing to tamper with client-side.
 // ============================================================
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useParentChild } from "@/hooks/useParentChild";
 import { getSupabaseClient } from "@/lib/supabase/client";
 import StatCard from "@/components/ui/StatCard";
 import Badge from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
 import {
   StudentsIcon,
   AttendanceIcon,
   FeesIcon,
   SecurityIcon,
-  ScheduleIcon,
+  AcademicCapIcon,
   ChevronRightIcon,
 } from "@/components/ui/Icons";
 import type { Announcement } from "@/types";
 
-export default function ParentDashboardPage() {
-  const { profile, parentData, loading } = useCurrentUser();
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [childData, setChildData] = useState<any>(null);
+function money(amount: number) {
+  return `$${amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
 
-  // Fetch announcements (campus-wide)
+export default function ParentDashboardPage() {
+  const { profile, parentData, loading: userLoading } = useCurrentUser();
+  const {
+    linked,
+    student,
+    summary,
+    loading: childLoading,
+    error: childError,
+    reload,
+  } = useParentChild();
+
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+
+  // Announcements addressed to parents or to everyone.
   useEffect(() => {
     async function load() {
       const supabase = getSupabaseClient();
       const { data } = await supabase
         .from("announcements")
         .select("*")
+        .or("target_role.eq.ALL,target_role.eq.PARENT,target_role.is.null")
         .order("date", { ascending: false });
       if (data) {
-        setAnnouncements(data.map((d: any) => ({
-          id: d.id,
-          title: d.title,
-          description: d.description,
-          date: d.date,
-          read: false,
-          priority: d.priority || "medium",
-        })));
+        setAnnouncements(
+          data.map((d: Record<string, unknown>) => ({
+            id: String(d.id),
+            title: String(d.title),
+            description: String(d.description),
+            date: d.date ? String(d.date) : undefined,
+            read: false,
+            priority: (d.priority as Announcement["priority"]) || "medium",
+          }))
+        );
       }
     }
     load();
   }, []);
 
-  // Fetch child data if parent has a linked child
-  useEffect(() => {
-    async function load() {
-      const childIdentifier = parentData?.childId || parentData?.child_id;
-      const childName = parentData?.childName || parentData?.child_name;
-
-      if (!childIdentifier && !childName) return;
-
-      try {
-        const supabase = getSupabaseClient();
-        const { data } = await supabase
-          .from("students")
-          .select("*")
-          .or(
-            `id.eq.${childIdentifier || "none"},register_number.eq.${childIdentifier || "none"},name.ilike.%${childName || "none"}%`
-          )
-          .limit(1)
-          .maybeSingle();
-
-        if (data) {
-          setChildData({
-            ...data,
-            attendancePct: Number(data.attendance_pct || data.attendancePct || 0),
-          });
-        }
-      } catch (err) {
-        console.warn("[ParentDashboard] Error loading linked child data:", err);
-      }
-    }
-    load();
-  }, [parentData?.childId, parentData?.child_id, parentData?.childName, parentData?.child_name]);
-
   const parentName = parentData?.name || profile?.name || "Parent";
   const firstName = parentName.split(" ")[0];
-  const childName = parentData?.childName || "your child";
-  const childId = parentData?.childId || "—";
+  const childName = student?.name || parentData?.childName || null;
+  const childId = student?.id || parentData?.childId || null;
   const latestAnnouncement = announcements[0];
 
-  if (loading) {
+  const att = summary?.attendance;
+  const fee = summary?.fees;
+  const acad = summary?.academics;
+
+  if (userLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
@@ -103,14 +96,32 @@ export default function ParentDashboardPage() {
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-white/90 text-xs font-semibold mb-3 border border-white/15">
               <span>Parent Access Verified</span>
-              <span>•</span>
-              <span>Student ID: {childId}</span>
+              {childId && (
+                <>
+                  <span>•</span>
+                  <span>Student ID: {childId}</span>
+                </>
+              )}
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-normal tracking-tight text-[#f4f6d6]">
               Welcome, {firstName}! 👋
             </h1>
             <p className="mt-2 text-white/70 text-xs sm:text-sm font-light">
-              Monitoring profile & progress for <span className="font-bold text-[#bf783e]">{childName}</span>
+              {childName ? (
+                <>
+                  Monitoring profile &amp; progress for{" "}
+                  <span className="font-bold text-[#bf783e]">{childName}</span>
+                  {student?.year != null && (
+                    <>
+                      {" "}
+                      · Year {student.year}
+                      {student.semester != null ? `, Semester ${student.semester}` : ""}
+                    </>
+                  )}
+                </>
+              ) : (
+                "No student is linked to your account yet."
+              )}
             </p>
           </div>
 
@@ -129,44 +140,140 @@ export default function ParentDashboardPage() {
         </div>
         <div className="flex-1 text-xs sm:text-sm">
           <span className="font-bold text-emerald-200">Campus Safety Status: All Verified Clear</span>
-          <span className="opacity-90 ml-1 text-emerald-300 font-light">— No active safety incidents or emergency broadcasts in your child&apos;s campus zone.</span>
+          <span className="opacity-90 ml-1 text-emerald-300 font-light">
+            — No active safety incidents or emergency broadcasts in your child&apos;s campus zone.
+          </span>
         </div>
       </div>
 
-      {/* Child KPI Stats Grid */}
-      <div className="grid-2 lg:grid-4">
-        <StatCard
-          label="Enrolled Program"
-          value={childData?.program || "Not linked"}
-          subtitle={childData ? `Year ${childData.year} • Full Time` : "Link your child's account"}
-          icon={<StudentsIcon className="w-5 h-5 text-[#bf783e]" />}
-          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
-        />
-        <StatCard
-          label="Cumulative Attendance"
-          value={childData ? `${childData.attendancePct || 0}%` : "—"}
-          change={childData && childData.attendancePct >= 85 ? "Good Standing" : "Requires Attention"}
-          trend={childData && childData.attendancePct >= 85 ? "up" : "down"}
-          icon={<AttendanceIcon className="w-5 h-5 text-emerald-400" />}
-          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
-        />
-        <StatCard
-          label="Academic GPA"
-          value={childData ? `GPA ${childData.gpa || "0.0"}` : "—"}
-          change={childData && parseFloat(childData.gpa || "0") >= 3.5 ? "Dean's List Track" : "Review needed"}
-          trend={childData && parseFloat(childData.gpa || "0") >= 3.5 ? "up" : "neutral"}
-          icon={<span className="text-lg">⭐</span>}
-          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
-        />
-        <StatCard
-          label="Campus Alerts"
-          value={announcements.length}
-          change={announcements.length > 0 ? "New Notices" : "All clear"}
-          trend={announcements.length > 0 ? "down" : "up"}
-          icon={<FeesIcon className="w-5 h-5 text-[#bf783e]" />}
-          iconBg="bg-white/5 text-[#f4f6d6] border-white/10"
-        />
-      </div>
+      {/* Child error / unlinked states */}
+      {childError && (
+        <div className="p-4 bg-rose-950/60 border border-rose-600/50 rounded-2xl text-xs text-rose-200 flex items-center justify-between gap-3">
+          <span>{childError}</span>
+          <button
+            onClick={reload}
+            className="px-3 py-1 bg-rose-800/60 hover:bg-rose-700/60 rounded-lg text-white font-medium transition-colors cursor-pointer shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!childLoading && !childError && !linked && (
+        <div className="card-flat bg-[#141414] border border-white/10">
+          <EmptyState
+            icon={<StudentsIcon className="w-6 h-6 text-white/40" />}
+            title="No student is linked to your account"
+            description="Your parent account is not yet connected to a student record. Contact the campus administrator, who can link it to your child's Student ID."
+          />
+        </div>
+      )}
+
+      {/* Child KPI Stats Grid — every value is a stored record */}
+      {linked && (
+        <>
+          <div className="grid-2 lg:grid-4">
+            <StatCard
+              label="Enrolled Program"
+              value={student?.program || "Not recorded"}
+              subtitle={
+                student?.year != null
+                  ? `Year ${student.year}${
+                      student.semester != null ? ` · Semester ${student.semester}` : ""
+                    }`
+                  : "Year not recorded"
+              }
+              icon={<StudentsIcon className="w-5 h-5 text-[#bf783e]" />}
+            />
+            <StatCard
+              label="Cumulative Attendance"
+              value={att?.percentage != null ? `${att.percentage}%` : "No records"}
+              change={
+                att?.percentage == null
+                  ? "Not yet marked"
+                  : att.percentage >= 85
+                  ? "Good Standing"
+                  : "Requires Attention"
+              }
+              trend={att?.percentage == null ? "neutral" : att.percentage >= 85 ? "up" : "down"}
+              icon={<AttendanceIcon className="w-5 h-5 text-emerald-400" />}
+            />
+            <StatCard
+              label="Outstanding Fees"
+              value={fee?.hasRecords ? money(fee.outstanding) : "No invoices"}
+              change={
+                !fee?.hasRecords
+                  ? "None issued"
+                  : fee.outstanding === 0
+                  ? "All cleared"
+                  : `${fee.pendingCount + fee.overdueCount} unpaid`
+              }
+              trend={!fee?.hasRecords ? "neutral" : fee.outstanding === 0 ? "up" : "down"}
+              icon={<FeesIcon className="w-5 h-5 text-[#bf783e]" />}
+            />
+            <StatCard
+              label="Academic GPA"
+              value={student?.gpa ?? "N/A"}
+              change={
+                acad?.hasRecords ? `${acad.courses} graded courses` : "No grades released"
+              }
+              trend={acad?.hasRecords ? "up" : "neutral"}
+              icon={<AcademicCapIcon className="w-5 h-5 text-[#bf783e]" />}
+            />
+          </div>
+
+          {/* Quick links into the detail pages */}
+          <div className="grid-3">
+            {[
+              {
+                href: "/parent/academics",
+                title: "Academic Information",
+                body:
+                  student?.year != null
+                    ? `Year ${student.year}${
+                        student.semester != null ? `, Semester ${student.semester}` : ""
+                      } · ${acad?.courses ?? 0} graded courses`
+                    : "Registration record and transcript",
+                icon: <AcademicCapIcon className="w-5 h-5 text-[#bf783e]" />,
+              },
+              {
+                href: "/parent/attendance",
+                title: "Attendance",
+                body: att?.hasRecords
+                  ? `${att.present} of ${att.totalClasses} lectures attended`
+                  : "No attendance recorded yet",
+                icon: <AttendanceIcon className="w-5 h-5 text-[#bf783e]" />,
+              },
+              {
+                href: "/parent/fees",
+                title: "Fees & Payments",
+                body: fee?.hasRecords
+                  ? `${money(fee.paid)} paid of ${money(fee.total)}`
+                  : "No invoices issued yet",
+                icon: <FeesIcon className="w-5 h-5 text-[#bf783e]" />,
+              },
+            ].map((card) => (
+              <Link
+                key={card.href}
+                href={card.href}
+                className="card-flat p-5 sm:p-6 bg-[#141414] border border-white/10 transition-all duration-200 hover:border-[#bf783e]/50 hover:-translate-y-0.5 group"
+              >
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center border bg-white/5 border-white/10 mb-4">
+                  {card.icon}
+                </div>
+                <div className="font-serif text-lg font-normal text-[#f4f6d6] tracking-tight">
+                  {card.title}
+                </div>
+                <p className="text-xs text-white/60 font-light mt-1 leading-relaxed">{card.body}</p>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#bf783e] mt-3">
+                  <span>View details</span>
+                  <ChevronRightIcon className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Announcements */}
       <div className="card-flat p-6">
@@ -182,12 +289,19 @@ export default function ParentDashboardPage() {
                 <span className="w-2 h-2 rounded-full bg-[#bf783e]" />
                 <h3 className="text-sm font-bold text-[#f4f6d6]">{latestAnnouncement.title}</h3>
               </div>
-              <p className="text-xs text-white/70 leading-relaxed font-light">{latestAnnouncement.description}</p>
-              <p className="text-[10px] text-white/40 font-medium mt-2.5">{latestAnnouncement.date}</p>
+              <p className="text-xs text-white/70 leading-relaxed font-light">
+                {latestAnnouncement.description}
+              </p>
+              <p className="text-[10px] text-white/40 font-medium mt-2.5">
+                {latestAnnouncement.date}
+              </p>
             </div>
 
             {announcements.slice(1, 3).map((a) => (
-              <div key={a.id} className="p-3.5 rounded-xl border border-white/10 hover:border-[#bf783e]/40 transition-colors bg-[#181818]">
+              <div
+                key={a.id}
+                className="p-3.5 rounded-xl border border-white/10 hover:border-[#bf783e]/40 transition-colors bg-[#181818]"
+              >
                 <div className="text-xs font-bold text-[#f4f6d6]">{a.title}</div>
                 <div className="text-[11px] text-white/40 mt-0.5 font-light">{a.date}</div>
               </div>

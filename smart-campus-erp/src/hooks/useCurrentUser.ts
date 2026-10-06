@@ -1,5 +1,10 @@
 // ============================================================
 // Smart Campus ERP — useCurrentUser Hook (Live Supabase Profile & Entities)
+//
+// The `students` / `parents` / `faculty` row is the authoritative
+// record. Values that exist in the database are NEVER overridden
+// with defaults here — a student admitted into Year 2 / Semester 3
+// must read back as Year 2 / Semester 3 everywhere in the app.
 // ============================================================
 "use client";
 
@@ -24,6 +29,13 @@ export interface CurrentUserResult {
   initials: string;
   loading: boolean;
   error: string | null;
+}
+
+/** Coerces a Postgres numeric/int column to a number, preserving 0 and rejecting junk. */
+function toNumberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function useCurrentUser(): CurrentUserResult {
@@ -91,27 +103,36 @@ export function useCurrentUser(): CurrentUserResult {
             .maybeSingle();
 
           if (!cancelled) {
-            // Demo account has mock data, everyone else is considered new by default (if no DB data exists).
-            const isDemoAccount = activeEmail === "demo@demo.com" || activeEmail.includes("demo") || activeEmail.includes("vishal");
-            
+            // "New student" means the registrar holds no `students` row for
+            // this account yet — not that the email address looks unfamiliar.
+            const hasRecord = Boolean(studentRow);
+
+            // The seeded demo account keeps its illustrative sample data on
+            // catalogue pages. Real accounts never fall back to sample rows.
+            const isDemoAccount =
+              activeEmail === "demo@demo.com" ||
+              activeEmail.includes("demo") ||
+              activeEmail.includes("vishal");
+
             setStudentData({
               id: studentRow?.id || user.id,
               profile_id: studentRow?.profile_id || user.id,
-              register_number: studentRow?.register_number || meta.register_number || `REG2026CS${user.id.slice(0, 4).toUpperCase()}`,
+              register_number: studentRow?.register_number || null,
               name: studentRow?.name || activeName,
               email: studentRow?.email || activeEmail,
               department: studentRow?.department || activeDept,
-              program: studentRow?.program || meta.program || "B.Tech Computer Science",
-              year: isDemoAccount ? Number(studentRow?.year || meta.year || 3) : 1, // Demo is year 3, new is year 1
-              semester: isDemoAccount ? Number(studentRow?.semester || meta.semester || 5) : 1, // Demo is sem 5, new is sem 1
-              phone: studentRow?.phone || meta.phone || "+1 (555) 019-2834",
-              gpa: isDemoAccount ? (studentRow?.gpa ? String(studentRow.gpa) : "9.2") : "N/A", // Demo gets 9.2, new gets N/A
+              program: studentRow?.program || "Not assigned",
+              // Authoritative: whatever the registrar stored, including 0.
+              year: toNumberOrNull(studentRow?.year),
+              semester: toNumberOrNull(studentRow?.semester),
+              phone: studentRow?.phone || null,
+              gpa: studentRow?.gpa != null ? String(studentRow.gpa) : "N/A",
               status: studentRow?.status || "Active",
-              attendancePct: isDemoAccount ? Number(studentRow?.attendance_pct || 92.5) : 0,
-              attendance_pct: isDemoAccount ? Number(studentRow?.attendance_pct || 92.5) : 0,
-              isNewStudent: !isDemoAccount, // If not demo, default to new student (empty states)
-              isDayScholar: !isDemoAccount, // New students default to day scholar for now
-              isDemoAccount: isDemoAccount,
+              attendancePct: toNumberOrNull(studentRow?.attendance_pct) ?? 0,
+              attendance_pct: toNumberOrNull(studentRow?.attendance_pct) ?? 0,
+              isNewStudent: !hasRecord,
+              isDayScholar: !hasRecord,
+              isDemoAccount,
             });
           }
         } else if (activeRole === "PARENT") {
@@ -123,16 +144,21 @@ export function useCurrentUser(): CurrentUserResult {
             .maybeSingle();
 
           if (!cancelled) {
+            // No placeholder child. An unlinked parent is shown as unlinked
+            // rather than being pointed at somebody else's student record.
+            const linkedChildId = parentRow?.child_id || null;
+            const linkedChildName = parentRow?.child_name || null;
+
             setParentData({
               id: parentRow?.id || user.id,
               profile_id: parentRow?.profile_id || user.id,
               name: parentRow?.name || activeName,
               email: parentRow?.email || activeEmail,
-              phone: parentRow?.phone || meta.phone || "+1 (555) 234-5678",
-              child_id: parentRow?.child_id || meta.childId || "STU-001",
-              child_name: parentRow?.child_name || meta.childName || "Alex Johnson",
-              childName: parentRow?.child_name || meta.childName || "Alex Johnson",
-              childId: parentRow?.child_id || meta.childId || "STU-001",
+              phone: parentRow?.phone || null,
+              child_id: linkedChildId,
+              child_name: linkedChildName,
+              childName: linkedChildName,
+              childId: linkedChildId,
             });
           }
         } else if (activeRole === "FACULTY") {
@@ -150,8 +176,8 @@ export function useCurrentUser(): CurrentUserResult {
               name: facultyRow?.name || activeName,
               email: facultyRow?.email || activeEmail,
               department: facultyRow?.department || activeDept,
-              designation: facultyRow?.designation || meta.designation || "Professor",
-              phone: facultyRow?.phone || meta.phone || "+1 (555) 876-5432",
+              designation: facultyRow?.designation || meta.designation || "Faculty Member",
+              phone: facultyRow?.phone || null,
             });
           }
         }

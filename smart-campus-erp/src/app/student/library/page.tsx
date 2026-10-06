@@ -25,7 +25,12 @@ export default function StudentLibraryPage() {
         const supabase = getSupabaseClient();
         const [booksRes, txnsRes] = await Promise.all([
           supabase.from("books").select("*").order("title"),
-          supabase.from("library_transactions").select("*, book:books(*)"),
+          // Scoped to this student — this previously returned every
+          // student's loans. RLS enforces the same boundary server-side.
+          supabase
+            .from("library_transactions")
+            .select("*, book:books(*)")
+            .eq("student_id", studentData?.id ?? ""),
         ]);
 
         if (booksRes.data && booksRes.data.length > 0) {
@@ -42,13 +47,9 @@ export default function StudentLibraryPage() {
 
         if (txnsRes.data && txnsRes.data.length > 0) {
           setTransactions(txnsRes.data);
-        } else if (studentData?.isNewStudent) {
-          setTransactions([]);
         } else {
-          setTransactions([
-            { id: "TXN-01", student_id: studentData?.id || "STU-001", book_id: "BK-001", issue_date: "2026-08-10", due_date: "2026-08-24", status: "Issued", fine_amount: 0 },
-            { id: "TXN-02", student_id: studentData?.id || "STU-001", book_id: "BK-004", issue_date: "2026-08-12", due_date: "2026-08-26", status: "Issued", fine_amount: 0 },
-          ]);
+          // Never invent loans against a real account.
+          setTransactions([]);
         }
       } catch (err) {
         console.warn("[StudentLibrary] Error loading library items:", err);
@@ -99,9 +100,9 @@ export default function StudentLibraryPage() {
       </div>
 
       {/* Borrowed Books Table */}
-      {studentData?.isNewStudent ? (
+      {transactions.length === 0 ? (
         <div className="card-flat p-8 text-center text-white/50 text-sm mb-6">
-          You haven't borrowed any books yet. Browse the campus catalog below to find required resources.
+          You haven&apos;t borrowed any books yet. Browse the campus catalog below to find required resources.
         </div>
       ) : (
         <DataTable

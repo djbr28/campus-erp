@@ -49,12 +49,8 @@ export default function StudentCoursesPage() {
         const { data } = await supabase.from("courses").select("*").order("course_code");
         if (data && data.length > 0) {
           setCourses(data);
-        } else if (studentData?.isNewStudent) {
-          setCourses([]);
         } else {
-          setCourses([
-            { id: "CS-301", course_name: "Data Structures & Algorithms", course_code: "CS-301", credits: 4, department: "Computer Science", instructor: "Dr. Alan Turing", schedule: "Mon/Wed 10:00 AM - 11:30 AM", location: "Hall B, CS Wing" },
-          ]);
+          setCourses([]);
         }
       } catch (err) {
         console.warn("[StudentCourses] Error loading courses:", err);
@@ -71,7 +67,8 @@ export default function StudentCoursesPage() {
   if (loading) return <LoadingState message="Loading registered courses…" />;
 
   const totalCredits = courses.reduce((s, c) => s + c.credits, 0);
-  const isNew = studentData?.isNewStudent || false;
+  // Driven by what the catalogue actually returned, not by an email guess.
+  const isNew = courses.length === 0;
 
   return (
     <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
@@ -82,7 +79,11 @@ export default function StudentCoursesPage() {
             Active semester enrollments, lecture times, venues, and assigned professors.
           </p>
         </div>
-        <Badge variant={isNew ? "gray" : "green"} dot>{isNew ? "Not Enrolled" : `Semester ${studentData?.semester || 5} Enrolled`}</Badge>
+        <Badge variant={isNew ? "gray" : "green"} dot>
+          {isNew || studentData?.semester == null
+            ? "Not Enrolled"
+            : `Semester ${studentData.semester} Enrolled`}
+        </Badge>
       </div>
 
       <div className="grid-3">

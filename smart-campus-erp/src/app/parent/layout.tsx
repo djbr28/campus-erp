@@ -5,6 +5,9 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const parentNav = [
   { label: "Dashboard", href: "/parent", icon: "📊" },
+  { label: "Academic Info", href: "/parent/academics", icon: "🎓" },
+  { label: "Attendance", href: "/parent/attendance", icon: "📋" },
+  { label: "Fees", href: "/parent/fees", icon: "💰" },
   { label: "Announcements", href: "/parent/announcements", icon: "📢" },
   { label: "Incidents", href: "/parent/incidents", icon: "🚨" },
 ];

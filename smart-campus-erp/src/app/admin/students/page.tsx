@@ -4,6 +4,9 @@
 // Reads every real account through /api/admin/users, which runs
 // server-side with the service role after verifying the caller is
 // an ADMIN. The browser never queries auth.users directly.
+//
+// All five roles are listed: Students, Faculty, Parents, Security
+// and Admins. Each row can be opened for editing.
 // ============================================================
 "use client";
 
@@ -13,6 +16,8 @@ import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import { SearchIcon, PlusIcon, StudentsIcon } from "@/components/ui/Icons";
 import AddUserModal from "@/components/admin/AddUserModal";
+import EditUserModal, { type EditableUser } from "@/components/admin/EditUserModal";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 /** Matches the `role` query parameter accepted by /api/admin/users. */
 type RoleTab = "ALL" | "STUDENT" | "FACULTY" | "PARENT" | "SECURITY" | "ADMIN";
@@ -26,25 +31,11 @@ const roleTabs: { key: RoleTab; label: string }[] = [
   { key: "ADMIN", label: "Admins" },
 ];
 
-interface DirectoryUser {
-  id: string;
-  recordId: string | null;
-  name: string;
-  email: string;
+interface DirectoryUser extends EditableUser {
   role: RoleTab;
-  department: string | null;
-  phone: string | null;
   created_at: string | null;
-  hasAuthAccount: boolean;
-  registerNumber?: string | null;
-  program?: string | null;
-  year?: number | null;
   gpa?: string | null;
-  status?: string | null;
   attendancePct?: number | null;
-  designation?: string | null;
-  childId?: string | null;
-  childName?: string | null;
 }
 
 const roleBadge: Record<string, "green" | "amber" | "blue" | "red" | "gray"> = {
@@ -56,13 +47,17 @@ const roleBadge: Record<string, "green" | "amber" | "blue" | "red" | "gray"> = {
 };
 
 export default function AdminUserDirectoryPage() {
+  const { profile } = useCurrentUser();
+
   const [users, setUsers] = useState<DirectoryUser[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleTab, setRoleTab] = useState<RoleTab>("ALL");
   const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "On Leave">("All");
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<DirectoryUser | null>(null);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -77,6 +72,7 @@ export default function AdminUserDirectoryPage() {
       }
 
       setUsers(data.users || []);
+      setCounts(data.counts || {});
     } catch (err) {
       console.error("[AdminUserDirectory] Error loading users:", err);
       setError(err instanceof Error ? err.message : "Failed to load the user directory.");
@@ -121,6 +117,8 @@ export default function AdminUserDirectoryPage() {
       : 0;
 
   const authAccounts = users.filter((u) => u.hasAuthAccount).length;
+  // counts.ALL spans the whole directory regardless of the active tab.
+  const totalAccounts = counts.ALL ?? users.length;
 
   return (
     <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
@@ -158,10 +156,13 @@ export default function AdminUserDirectoryPage() {
       <div className="grid-3">
         <div className="stat-card">
           <div className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-            {roleTab === "ALL" ? "Total Accounts" : `Total ${roleTabs.find((t) => t.key === roleTab)?.label}`}
+            Total Accounts
           </div>
           <div className="font-serif text-2xl sm:text-3xl font-normal text-[#f4f6d6] mt-1">
-            {users.length}
+            {totalAccounts}
+          </div>
+          <div className="text-[11px] text-white/40 mt-1">
+            Showing {users.length} {roleTab === "ALL" ? "accounts" : roleTabs.find((t) => t.key === roleTab)?.label.toLowerCase()}
           </div>
         </div>
         {showStudentColumns ? (
@@ -218,6 +219,11 @@ export default function AdminUserDirectoryPage() {
             }`}
           >
             {tab.label}
+            {counts[tab.key] !== undefined && (
+              <span className={roleTab === tab.key ? "ml-1.5 opacity-60" : "ml-1.5 opacity-50"}>
+                {counts[tab.key]}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -268,7 +274,7 @@ export default function AdminUserDirectoryPage() {
                 {showStudentColumns ? (
                   <>
                     <th className="hidden sm:table-cell">Program</th>
-                    <th className="hidden md:table-cell">Year</th>
+                    <th className="hidden md:table-cell">Year / Sem</th>
                     <th className="hidden md:table-cell">GPA</th>
                     <th className="hidden lg:table-cell">Attendance</th>
                     <th>Status</th>
@@ -281,12 +287,13 @@ export default function AdminUserDirectoryPage() {
                     <th>Login</th>
                   </>
                 )}
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={showStudentColumns ? 7 : 6}>
+                  <td colSpan={showStudentColumns ? 8 : 7}>
                     <div className="flex items-center justify-center py-16">
                       <div className="text-center">
                         <div className="w-9 h-9 border-3 border-white/20 border-t-[#bf783e] rounded-full animate-spin mx-auto" />
@@ -299,7 +306,7 @@ export default function AdminUserDirectoryPage() {
 
               {!isLoading &&
                 filtered.map((u) => (
-                  <tr key={`${u.role}-${u.id}`} className="table-row-clickable">
+                  <tr key={`${u.role}-${u.id}`}>
                     <td className="font-mono text-xs font-semibold text-white/50">
                       {u.recordId || u.id.slice(0, 8)}
                     </td>
@@ -314,7 +321,9 @@ export default function AdminUserDirectoryPage() {
                           {u.program || "—"}
                         </td>
                         <td className="hidden md:table-cell text-white/60 text-xs font-semibold">
-                          {u.year ? `Year ${u.year}` : "—"}
+                          {u.year != null
+                            ? `Year ${u.year}${u.semester != null ? ` · Sem ${u.semester}` : ""}`
+                            : "—"}
                         </td>
                         <td className="hidden md:table-cell">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-[#bf783e]/20 text-[#f4f6d6] border border-[#bf783e]/40 font-mono">
@@ -392,12 +401,21 @@ export default function AdminUserDirectoryPage() {
                         </td>
                       </>
                     )}
+
+                    <td className="text-right">
+                      <button
+                        onClick={() => setEditingUser(u)}
+                        className="px-3 py-1 text-xs font-bold rounded-full border border-white/15 text-white/70 hover:text-[#f4f6d6] hover:border-[#bf783e]/50 hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
 
               {!isLoading && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={showStudentColumns ? 7 : 6}>
+                  <td colSpan={showStudentColumns ? 8 : 7}>
                     <EmptyState
                       icon={<StudentsIcon className="w-6 h-6 text-white/40" />}
                       title={
@@ -418,6 +436,16 @@ export default function AdminUserDirectoryPage() {
       <AddUserModal
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
+        onSuccess={loadUsers}
+      />
+
+      <EditUserModal
+        // Remounting per row seeds the form from that row, with no effect.
+        key={editingUser?.id ?? "no-user"}
+        isOpen={editingUser !== null}
+        user={editingUser}
+        currentAdminId={profile?.id}
+        onClose={() => setEditingUser(null)}
         onSuccess={loadUsers}
       />
     </div>

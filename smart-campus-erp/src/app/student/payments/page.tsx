@@ -25,7 +25,13 @@ export default function StudentPaymentsPage() {
       if (!studentData?.id) return;
       try {
         const supabase = getSupabaseClient();
-        const { data } = await supabase.from("fees").select("*").order("due_date", { ascending: true });
+        // Scoped to this student — previously this read every fee row in the
+        // table. RLS now enforces the same boundary server-side.
+        const { data } = await supabase
+          .from("fees")
+          .select("*")
+          .eq("student_id", studentData.id)
+          .order("due_date", { ascending: true });
         if (data && data.length > 0) {
           setFees(data.map((d: any) => ({
             id: d.id,

@@ -302,8 +302,11 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
           {formData.role === "PARENT" && (
             <>
               <div className="space-y-1.5 sm:col-span-2">
-                <label className="text-xs font-semibold text-white/70">Child's Student ID (Optional)</label>
+                <label className="text-xs font-semibold text-white/70">
+                  Child&apos;s Student ID <span className="text-rose-400">*</span> (Required)
+                </label>
                 <input
+                  required
                   type="text"
                   name="childId"
                   value={formData.childId}
@@ -312,7 +315,8 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
                   className="w-full bg-[#181818] border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#f4f6d6]/50 transition-colors"
                 />
                 <p className="text-[10px] text-white/40 mt-1">
-                  Enter the exact Student ID (e.g. STU-001) to link this parent account to the student.
+                  A parent account cannot exist without a student. Enter the Student ID (e.g. STU-001) or
+                  the register number — it is verified against the database before the account is created.
                 </p>
               </div>
             </>

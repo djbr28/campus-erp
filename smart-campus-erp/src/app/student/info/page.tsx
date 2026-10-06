@@ -31,12 +31,12 @@ export default function StudentInfoPage() {
         name={studentData?.name || "Student"}
         role="Student"
         email={studentData?.email || ""}
-        idNumber={studentData?.register_number || studentData?.id || "REG2026CS001"}
-        department={studentData?.department || "Computer Science"}
-        program={studentData?.program || "B.Tech Computer Science"}
-        year={studentData?.year || 1}
-        semester={studentData?.semester || 1}
-        phone={studentData?.phone || "+1 (555) 019-2834"}
+        idNumber={studentData?.register_number || studentData?.id || "—"}
+        department={studentData?.department || "—"}
+        program={studentData?.program || "—"}
+        year={studentData?.year ?? "—"}
+        semester={studentData?.semester ?? "—"}
+        phone={studentData?.phone || "Not provided"}
         status={studentData?.status || "Active"}
         initials={initials}
       />
@@ -52,20 +52,26 @@ export default function StudentInfoPage() {
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Degree Program</span>
-              <span className="text-[#f4f6d6] font-medium">{studentData?.program || "B.Tech Computer Science"}</span>
+              <span className="text-[#f4f6d6] font-medium">{studentData?.program || "—"}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Department / Faculty</span>
-              <span className="text-[#f4f6d6] font-medium">{studentData?.department || "Computer Science"}</span>
+              <span className="text-[#f4f6d6] font-medium">{studentData?.department || "—"}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-white/5">
               <span className="text-white/50">Current Academic Year</span>
-              <span className="text-[#bf783e] font-bold">Year {studentData?.year || 1} (Semester {studentData?.semester || 1})</span>
+              <span className="text-[#bf783e] font-bold">
+                {studentData?.year != null
+                  ? `Year ${studentData.year}${
+                      studentData.semester != null ? ` (Semester ${studentData.semester})` : ""
+                    }`
+                  : "Not recorded"}
+              </span>
             </div>
             {!studentData?.isNewStudent && (
               <div className="flex justify-between py-2">
                 <span className="text-white/50">Cumulative GPA (CGPA)</span>
-                <span className="font-serif text-base text-[#f4f6d6] font-normal">{studentData?.gpa || "9.2"} / 10.00</span>
+                <span className="font-serif text-base text-[#f4f6d6] font-normal">{studentData?.gpa || "N/A"} / 10.00</span>
               </div>
             )}
           </div>

@@ -51,13 +51,15 @@ export interface Alert {
 export interface Student {
   id: string;
   profile_id?: string;
-  register_number?: string;
+  /** null when the registrar has not issued one yet — never a placeholder. */
+  register_number?: string | null;
   name: string;
   department?: string;
   program: string;
-  year: number;
-  semester?: number;
-  phone?: string;
+  /** null means "no students row / not recorded", never "assume Year 1". */
+  year: number | null;
+  semester?: number | null;
+  phone?: string | null;
   email: string;
   parent_id?: string;
   gpa: number | string;
@@ -75,11 +77,12 @@ export interface Parent {
   profile_id?: string;
   name: string;
   email: string;
-  phone?: string;
-  child_id?: string;
-  child_name?: string;
-  childName?: string;
-  childId?: string;
+  phone?: string | null;
+  /** null when this parent is not linked to a student. */
+  child_id?: string | null;
+  child_name?: string | null;
+  childName?: string | null;
+  childId?: string | null;
 }
 
 export interface Faculty {
@@ -89,7 +92,7 @@ export interface Faculty {
   email: string;
   department: string;
   designation: string;
-  phone?: string;
+  phone?: string | null;
   created_at?: string;
 }
 

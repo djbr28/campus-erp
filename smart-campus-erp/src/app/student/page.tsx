@@ -134,12 +134,21 @@ export default function StudentDashboardPage() {
 
   const name = studentData?.name || "Student";
   const firstName = name.split(" ")[0];
-  const year = studentData?.year || 1;
+  const year = studentData?.year ?? null;
+  const semester = studentData?.semester ?? null;
   const program = studentData?.program || "Undeclared";
   const studentId = studentData?.id || "—";
-  const gpa = studentData?.gpa || "0.0";
-  const attendancePct = studentData?.attendancePct || 0;
+  const gpa = studentData?.gpa ?? "N/A";
   const isNew = studentData?.isNewStudent || false;
+
+  // Prefer the real attendance_records roll-up; fall back to the registrar's
+  // stored students.attendance_pct only when no records exist yet.
+  const lecturesHeld = attendance.reduce((s, a) => s + a.total, 0);
+  const lecturesAttended = attendance.reduce((s, a) => s + a.present, 0);
+  const hasAttendanceRecords = attendance.length > 0 && lecturesHeld > 0;
+  const attendancePct = hasAttendanceRecords
+    ? Math.round((lecturesAttended / lecturesHeld) * 100)
+    : studentData?.attendancePct ?? 0;
 
   const currentDayName = new Date().toLocaleDateString("en-US", { weekday: "long" });
   const todayClassesCount = scheduleData[currentDayName]?.length || 0;
@@ -173,7 +182,13 @@ export default function StudentDashboardPage() {
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-white/90 text-xs font-semibold mb-3 border border-white/15">
-              <span>Academic Year {year}</span>
+              <span>{year != null ? `Academic Year ${year}` : "Year not recorded"}</span>
+              {semester != null && (
+                <>
+                  <span>•</span>
+                  <span>Semester {semester}</span>
+                </>
+              )}
               <span>•</span>
               <span>{program}</span>
             </div>

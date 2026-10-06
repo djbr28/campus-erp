@@ -23,17 +23,18 @@ export default function StudentAcademicsPage() {
       if (!studentData?.id) return;
       try {
         const supabase = getSupabaseClient();
+        // Scoped to this student. RLS enforces the same thing server-side;
+        // the explicit filter keeps the intent obvious and the payload small.
         const { data } = await supabase
           .from("academic_records")
           .select("*")
+          .eq("student_id", studentData.id)
           .order("semester", { ascending: false });
 
         if (data && data.length > 0) {
           setRecords(data);
-        } else if (studentData.isNewStudent) {
-          setRecords([]);
-        } else {
-          // Fallback sample data
+        } else if (studentData.isDemoAccount) {
+          // Illustrative transcript for the seeded demo login only.
           setRecords([
             { id: "1", student_id: studentData.id, semester: 4, subject: "Database Management Systems", marks: 92.5, grade: "A+", cgpa: 3.90, credits: 4 },
             { id: "2", student_id: studentData.id, semester: 4, subject: "Operating Systems Architecture", marks: 88.0, grade: "A", cgpa: 3.80, credits: 4 },
@@ -42,6 +43,8 @@ export default function StudentAcademicsPage() {
             { id: "5", student_id: studentData.id, semester: 3, subject: "Object-Oriented Programming", marks: 96.0, grade: "A+", cgpa: 4.00, credits: 4 },
             { id: "6", student_id: studentData.id, semester: 3, subject: "Digital Logic & Microprocessors", marks: 89.0, grade: "A", cgpa: 3.85, credits: 4 },
           ]);
+        } else {
+          setRecords([]);
         }
       } catch (err) {
         console.warn("[StudentAcademics] Error loading records:", err);
@@ -57,7 +60,9 @@ export default function StudentAcademicsPage() {
 
   const totalCredits = records.reduce((s, r) => s + (r.credits || 4), 0);
   const avgMarks = records.length > 0 ? (records.reduce((s, r) => s + Number(r.marks), 0) / records.length).toFixed(1) : "0";
-  const isNew = studentData?.isNewStudent || false;
+  // "Nothing to show" is driven by the records themselves, not by a guess
+  // about whether the account looks new.
+  const isNew = records.length === 0;
 
   return (
     <div className="space-y-6 animate-fade-in text-[#f4f6d6]">
@@ -68,14 +73,14 @@ export default function StudentAcademicsPage() {
             Semester transcripts, cumulative GPA performance, credits completed, and graded assessments.
           </p>
         </div>
-        <Badge variant="blue">Cumulative GPA: {isNew ? "N/A" : (studentData?.gpa || "9.2")} / 10.00</Badge>
+        <Badge variant="blue">Cumulative GPA: {studentData?.gpa ?? "N/A"} / 10.00</Badge>
       </div>
 
       {/* KPI Stats */}
       <div className="grid-3">
         <StatCard
           label="Cumulative Grade Point Average"
-          value={isNew ? "N/A" : `${studentData?.gpa || "9.2"}`}
+          value={`${studentData?.gpa ?? "N/A"}`}
           change={isNew ? "No records" : "Top 5% Cohort"}
           trend={isNew ? "neutral" : "up"}
           icon={<AcademicCapIcon className="w-5 h-5 text-[#bf783e]" />}
