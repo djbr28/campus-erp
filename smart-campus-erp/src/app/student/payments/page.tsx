@@ -150,7 +150,7 @@ export default function StudentPaymentsPage() {
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between py-1.5 border-b border-white/5">
                 <span className="text-white/50">Student Name</span>
-                <span className="text-[#f4f6d6] font-medium">{studentData?.name || "Alex Johnson"}</span>
+                <span className="text-[#f4f6d6] font-medium">{studentData?.name || "Not provided"}</span>
               </div>
               <div className="flex justify-between py-1.5 border-b border-white/5">
                 <span className="text-white/50">Register Number</span>

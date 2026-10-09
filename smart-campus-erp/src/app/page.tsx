@@ -263,7 +263,6 @@ export default function LandingPage() {
               { role: "Faculty", desc: "Mark class registers, manage student rosters, and message parents directly.", badge: "Faculty Workspace" },
               { role: "Administration", desc: "Query data with Campus AI, audit operations, and manage compliance.", badge: "Command Center" },
               { role: "Security Officers", desc: "Live incident response queue, priority triage, and incident resolution.", badge: "Security Hub" },
-              { role: "Finance & Bursar", desc: "Automated tuition invoicing, fee reconciliation, and ledger tracking.", badge: "Finance Portal" },
             ].map((item) => (
               <div
                 key={item.role}

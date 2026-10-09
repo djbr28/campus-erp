@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/supabase/server";
+import { validatePassword } from "@/lib/password-rules";
 
 // Mirrors the CHECK constraint on public.profiles.role.
 const VALID_ROLES = ["STUDENT", "PARENT", "FACULTY", "ADMIN", "SECURITY"] as const;
@@ -382,11 +383,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (String(password).length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters." },
-        { status: 400 }
-      );
+    const passwordProblem = validatePassword(String(password));
+    if (passwordProblem) {
+      return NextResponse.json({ error: passwordProblem }, { status: 400 });
     }
 
     const supabaseAdmin = getSupabaseAdmin();

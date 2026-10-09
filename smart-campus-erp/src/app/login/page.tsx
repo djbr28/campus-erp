@@ -75,40 +75,28 @@ export default function LoginPage() {
 
       // ── Step 2: Fetch the user's profile to get their role ──
       console.log("[LOGIN] Fetching profile for user:", authData.user.id);
-      let { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", authData.user.id)
-        .single();
+        .maybeSingle();
       console.log("[LOGIN] PROFILE RESULT", {
         role: profile?.role ?? null,
         profileError: profileError?.message ?? null,
       });
 
-      // If user exists in Auth (e.g. created directly in Supabase dashboard) but has no profile row yet:
-      if (!profile) {
-        const metadataRole = authData.user.user_metadata?.role || (email.toLowerCase().includes("admin") ? "ADMIN" : email.toLowerCase().includes("security") ? "SECURITY" : email.toLowerCase().includes("faculty") ? "FACULTY" : "STUDENT");
-        const metadataName = authData.user.user_metadata?.name || email.split("@")[0];
-
-        console.log("[LOGIN] Auto-creating missing profile row with role:", metadataRole);
-        const { error: insertErr } = await supabase.from("profiles").upsert([
-          {
-            id: authData.user.id,
-            email: authData.user.email || email,
-            name: metadataName,
-            role: metadataRole.toUpperCase(),
-          },
-        ]);
-
-        if (!insertErr) {
-          profile = { role: metadataRole.toUpperCase() };
-        } else {
-          console.error("[LOGIN] Could not auto-create profile:", insertErr.message);
-          setError(
-            "Your account does not have a profile. Please sign up via the signup page or insert a profile record in Supabase."
-          );
-          return;
-        }
+      // Roles come ONLY from the profiles row written by the admin-controlled
+      // account-creation flow. An Auth user without one is not provisioned:
+      // fail safely. Nothing is created here, and no role is ever inferred
+      // from the email address or from user_metadata (which users can edit).
+      if (profileError || !profile) {
+        await supabase.auth.signOut();
+        setError(
+          profileError
+            ? "We couldn't verify your account role. Please try again."
+            : "Your account has not been set up with a campus role. Please contact an administrator."
+        );
+        return;
       }
 
       // ── Step 3: Redirect based on the role from the database ──
@@ -117,6 +105,7 @@ export default function LoginPage() {
 
       if (!route) {
         console.error("[LOGIN] Unrecognized role:", profile.role);
+        await supabase.auth.signOut();
         setError(
           `Your account has an unrecognized role ("${profile.role}"). Please contact an administrator.`
         );

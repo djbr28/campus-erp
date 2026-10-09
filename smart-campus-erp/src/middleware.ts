@@ -124,7 +124,10 @@ export async function middleware(request: NextRequest) {
         .eq("id", user.id)
         .maybeSingle();
 
-      const userRole = profile?.role?.toUpperCase() || (user.user_metadata?.role || "STUDENT").toUpperCase();
+      // Database role only. user_metadata is editable by the user and a
+      // profile-less account must stay on /login rather than bounce between
+      // /login and a portal it cannot enter.
+      const userRole = profile?.role?.toUpperCase();
       console.log("[MIDDLEWARE] Active session on auth page, role:", userRole);
 
       if (userRole && roleHomeRoute[userRole]) {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
+import { PASSWORD_HINT, PASSWORD_MIN_LENGTH, validatePassword } from "@/lib/password-rules";
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -34,8 +35,16 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+
+    // Early feedback only — the API enforces the same rule server-side.
+    const passwordProblem = validatePassword(formData.password);
+    if (passwordProblem) {
+      setError(passwordProblem);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/admin/users", {
@@ -159,8 +168,9 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModa
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Min 6 characters"
-              minLength={6}
+              placeholder={PASSWORD_HINT}
+              minLength={PASSWORD_MIN_LENGTH}
+              autoComplete="new-password"
               className="w-full bg-[#181818] border border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#f4f6d6]/50 transition-colors"
             />
           </div>

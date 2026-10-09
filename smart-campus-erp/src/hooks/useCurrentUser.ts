@@ -67,7 +67,6 @@ export function useCurrentUser(): CurrentUserResult {
 
         const meta = user.user_metadata || {};
         const metaName = meta.name || user.email?.split("@")[0] || "User";
-        const metaRole = (meta.role || "STUDENT").toUpperCase();
 
         // ── Step 2: Fetch profile from profiles table ──
         const { data: profileData } = await supabase
@@ -76,10 +75,12 @@ export function useCurrentUser(): CurrentUserResult {
           .eq("id", user.id)
           .maybeSingle();
 
-        const activeRole = (profileData?.role || metaRole).toUpperCase();
+        // The role comes from the database only. user_metadata is editable by
+        // the user, so it is never allowed to stand in for a missing profile.
+        const activeRole = String(profileData?.role || "").toUpperCase();
         const activeName = profileData?.name || metaName;
         const activeEmail = profileData?.email || user.email || "";
-        const activeDept = profileData?.department || meta.department || "Computer Science";
+        const activeDept = profileData?.department || "";
 
         if (!cancelled) {
           setProfile({
@@ -176,7 +177,7 @@ export function useCurrentUser(): CurrentUserResult {
               name: facultyRow?.name || activeName,
               email: facultyRow?.email || activeEmail,
               department: facultyRow?.department || activeDept,
-              designation: facultyRow?.designation || meta.designation || "Faculty Member",
+              designation: facultyRow?.designation || "",
               phone: facultyRow?.phone || null,
             });
           }
